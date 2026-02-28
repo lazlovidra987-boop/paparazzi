@@ -19,7 +19,11 @@
       </program>
 
     <program name="PprzGCS">
-      <arg flag="--speech"/>
+      <!-- <arg flag=" (flag) speech"/>
+      <arg flag="-maximize"/>
+      <arg flag="-center_ac"/>
+      <arg flag="-mercator"/>
+      <arg flag="-maps_no_http"/> -->
       <!-- <arg flag="-fullscreen"/> DOESN'T WORK -->
     </program>
       
