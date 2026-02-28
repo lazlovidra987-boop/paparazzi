@@ -17,9 +17,12 @@
       <program name="Server">
         <arg flag="-n"/>
       </program>
-      <program name="PprzGCS">
-        <arg flag="--speech"/>
-      </program>
+
+    <program name="PprzGCS">
+      <arg flag="--speech"/>
+      <!-- <arg flag="-fullscreen"/> DOESN'T WORK -->
+    </program>
+      
       <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
         <arg flag="-ac" constant="@AIRCRAFT"/>
         <arg flag="sm600.xml"/>
