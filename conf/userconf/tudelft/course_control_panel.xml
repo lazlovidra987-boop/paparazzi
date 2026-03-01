@@ -97,7 +97,7 @@
     </session>
     <session name="Distance Counter">
       <program name="Optitrack Distance Counter"/>
-    </session>`
+    </session>
 
   </section>
 </control_panel>
