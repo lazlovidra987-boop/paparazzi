@@ -3,7 +3,7 @@
 import os.path
 
 from generated.ui_program import Ui_Program
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QWidget
 from PyQt5 import QtCore
 from PyQt5.QtCore import QProcess
 from PyQt5.QtGui import QIcon
@@ -41,34 +41,35 @@ class ProgramWidget(QWidget, Ui_Program):
         self.process.finished.connect(self.handle_finished)
         self.process.started.connect(self.handle_started)
         self.process.errorOccurred.connect(self.handle_error)
-        i = QIcon(os.path.join(utils.PAPARAZZI_HOME, "data", "pictures", "tools_icons", icon))
+        i = QIcon(os.path.join(utils.PAPARAZZI_HOME, "data", "pictures", "tools_icons", icon))  # type: ignore[arg-type]
         self.icon_label.setPixmap(i.pixmap(20, 20))
         self.icon_label.setToolTip(shortname)
 
     def start_program(self):
         self.program_lineedit.setStyleSheet("")
-        if self.process.state() == QProcess.NotRunning:
+        if self.process.state() == QProcess.NotRunning:  # type: ignore[attr-defined]
+            # self.process.setWorkingDirectory(utils.PAPARAZZI_HOME) # main change, launches without it though
             self.process.start(self.cmd[0], self.cmd[1:])
             self.started.emit()
 
     def handle_cmd_return(self):
-        if self.process.state() == QProcess.NotRunning:
+        if self.process.state() == QProcess.NotRunning:  # type: ignore[attr-defined]
             self.cmd = self.program_lineedit.text().split(" ")
             self.start_program()
-        elif self.process.state() == QProcess.Running:
+        elif self.process.state() == QProcess.Running:  # type: ignore[attr-defined]
             self.terminate()
 
     def handle_run(self):
-        if self.process.state() == QProcess.NotRunning:
+        if self.process.state() == QProcess.NotRunning:  # type: ignore[attr-defined]
             self.cmd = self.program_lineedit.text().split(" ")
             self.start_program()
-        elif self.process.state() == QProcess.Running:
+        elif self.process.state() == QProcess.Running:  # type: ignore[attr-defined]
             self.process.terminate()
 
     def handle_remove(self):
-        if self.process.state() == QProcess.NotRunning:
+        if self.process.state() == QProcess.NotRunning:  # type: ignore[attr-defined]
             self.remove.emit()
-        elif self.process.state() == QProcess.Running:
+        elif self.process.state() == QProcess.Running:  # type: ignore[attr-defined]
             self.process.finished.connect(self.remove)
             self.process.terminate()
 
@@ -84,8 +85,8 @@ class ProgramWidget(QWidget, Ui_Program):
         self.finished.emit(exit_code, exit_status)
 
     def handle_error(self, error: QProcess.ProcessError):
-        if error == QProcess.FailedToStart:
-            self.handle_finished(-1, QProcess.CrashExit)
+        if error == QProcess.FailedToStart:  # type: ignore[attr-defined]
+            self.handle_finished(-1, QProcess.CrashExit)  # type: ignore[attr-defined]
         # FailedToStart
         # Crashed
         # Timedout
@@ -94,7 +95,7 @@ class ProgramWidget(QWidget, Ui_Program):
         # UnknownError
 
     def terminate(self):
-        if self.process.state() != QProcess.NotRunning:
+        if self.process.state() != QProcess.NotRunning:  # type: ignore[attr-defined]
             self.process.terminate()
 
     def state(self):
