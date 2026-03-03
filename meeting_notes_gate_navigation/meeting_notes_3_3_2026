@@ -1,0 +1,31 @@
+General:
+- We made our branch called gate_navigation: David, Wick and Mike will be working in this branch.
+
+Gate detection and navigation:
+- The detection of the gates is already implemented into the code
+    - However this is just basic gate detection which we can alter for a more specific or robust strategy
+- We made multiple files. This commit can be viewed in github for more details; 
+    sw/airborne/modules/gate_navigator/gate_navigator.c : This is the main working file, where all the logic is written
+     sw/airborne/modules/gate_navigator/gate_navigator.h : This explains what needs to be compiled and stuff
+    gate_navigator.h defines the initialisation such that the autopilot can recognize the them
+    conf/airframes/tudelft/bebop_gate_navigator.xml : This what shows up in your paperazzi which you will have to select in order to have the programm runnin
+    conf/modules/gate_navigator.xml : It specifies which c files need to be compiled during the build process
+- The gate detection algorithm that is already installed is not sufficient to be used for simulation. Sometimes the gate was detected, but only for a moment. We either have to improve on the detection, or make the drone more sensitive when a gate is detected. the latter option does not seem like a good first step however.
+
+
+
+
+Plan: We made multiple strategies that we will discuss with the professor Wednesday (4-3-2026) during the lecture
+- CCN: David found a paper which uses a CNN model to determine whether to turn right left or forward. This was apparently not very intensive to use but is intensive to train. We will discuss this idea with the professor to determine whether this is a good option.
+- With the method we are using now (gate_navigator.c), in the simulating, we are able to detect the gate, but the states (search, align, etc) do not work yet. We think that this is just tuning, since the logic in the code is quite clear. 
+- A different approach is to make it a real procedure if we locate a gate. This would be done in steps. 
+    1. once the gate is detected. the distance and the angle of the gate must be determined: 
+        This can be done by looking at the height of the gate (the vertical length of the square). If this square is small we want to move closer to it, to 1 m approximately. If the height seems to be in order (and we thus know our distance to the gate) we can detect wheter the vertical length and the width of the gate is nearly the same. If the width is smaller than the length, we know we are on an angle.
+    2. Once we know that the we are on a too large of an angle from the gate, we know we will have to move to the side, but not to which one yet. To determine that, we  move a little to the right or left while rotating the yaw left or right a bit. If the width to height ration gets smaller or larger, we know which side to move to. 
+    3. Now we know how to Align ourself with the gate, we need to make sure we dont hit any obstacles while aligning. For this, we can use small steps of 30cm or something where we turn the camera in the direction of the side we are moving. If there is no obstacle near. After 30 cm of moving in that direction we can turn the camera back to the gate to see wherther the width to height ratio has become within the threshold (acceptable to fly through). If this is not the case, we repeat this step, until we are aligned with the gate.
+    4. Once step 3 is done we are now ready to fly through the gate. This is the last stage and should be the easiest. This is done by calculating the middle of the gate the whole time until we are through it. 
+
+
+Questions for professor:
+1. We now have made a beginning with the computer vision and logic for the gate detection (Read comment of the gate_navigator.c for more indept logic). We now want to know if it is a good idea to work on a more ambiguous method; using a CNN. Is this a good point to develop that idea, or should we keep focus on the method we are using now? (intograting, simulating, testing)
+2. Is a CNN a good method to explore. Are there any problems if we want to develop this that we have to keep in mind. We have to record data for this of us flying through the gate. Do you think we can use data augmentation for this? And whether half an hour is enough data?
