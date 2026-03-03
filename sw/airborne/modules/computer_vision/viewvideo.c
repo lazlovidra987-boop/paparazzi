@@ -219,11 +219,6 @@ void viewvideo_init(void)
 {
   viewvideo.is_streaming = true;
   
-  #ifdef VIEWVIDEO_CAMERA
-    printf("[viewvideo] DEBUG: Raw Camera Width: %d, Height: %d\n", 
-            VIEWVIDEO_CAMERA.w, VIEWVIDEO_CAMERA.h);
-  #endif
-
   // safety check
   if(viewvideo.downsize_factor < 1){
     viewvideo.downsize_factor = 1;

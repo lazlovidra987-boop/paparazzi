@@ -42,20 +42,24 @@ float nav_forward_speed  = GATE_NAV_FORWARD_SPEED;
 float nav_quality_thresh = GATE_NAV_QUALITY_THRESH;
 
 #ifndef GATE_NAV_ALIGN_THRESH
-#define GATE_NAV_ALIGN_THRESH 0.12f     // ~12% of frame width = "centered"
+#define GATE_NAV_ALIGN_THRESH 0.01f 
 #endif
 float nav_align_thresh   = GATE_NAV_ALIGN_THRESH;
 
+#ifndef PASS_TIME_S
+#define PASS_TIME_S 2.5f      // seconds to fly forward after entering gate
+#endif
+float pass_time_s       = PASS_TIME_S;
+
 #ifndef GATE_NAV_SEARCH_RATE
-#define GATE_NAV_SEARCH_RATE 1.0f      // deg/s rotation while searching
+#define GATE_NAV_SEARCH_RATE 0.02f      // deg/s rotation while searching
 #endif
 float nav_search_rate    = GATE_NAV_SEARCH_RATE;
 
+
 /* ── Constants ───────────────────────────────────────────────────────────── */
-/* ── Constants ───────────────────────────────────────────────────────────── */
-#define IMG_WIDTH  540/4  // Use 640 for standard Bebop Sim resolution
-#define IMG_HEIGHT 480/4
-#define PASS_TIME_S 2.5f  // seconds to fly forward after entering gate
+#define IMG_WIDTH  540  // ????? dont know the resolution of the sim cam
+#define IMG_HEIGHT 240
 
 /* ── State machine ───────────────────────────────────────────────────────── */
 enum gate_nav_state { SEARCH, ALIGN, APPROACH, PASS };
@@ -63,7 +67,6 @@ static enum gate_nav_state nav_state = SEARCH;
 
 /* ── Simple timer ────────────────────────────────────────────────────────── */
 static int pass_ticks = 0;
-#define PASS_TICKS ((int)(PASS_TIME_S * 10))  // 10 Hz periodic
 
 /* ── Init ────────────────────────────────────────────────────────────────── */
 void gate_navigator_init(void)
@@ -117,7 +120,11 @@ void gate_navigator_periodic(void)
       break;
 
     case APPROACH:
-      if (!gate_found) { nav_state = SEARCH; break; }
+      if (!gate_found) { 
+        pass_ticks = 0;
+        nav_state = SEARCH; 
+        break;
+      }
 
       // If we drift too far off-center while flying, go back to ALIGN
       if (fabsf(h_error) > 0.25f) {
@@ -125,26 +132,24 @@ void gate_navigator_periodic(void)
         break;
       }
 
-      // Fly forward, but use a very small correction to stay centered
-      guidance_h_set_body_vel(nav_forward_speed, 0.f);
-      guidance_h_set_heading_rate(RadOfDeg(h_error * 5.0f)); 
-
-      if ((dist_m > 0.f && dist_m < 1.0f) || (gate_sz > IMG_WIDTH / 3)) {
+      if ((dist_m > 0.f && dist_m < 1.5f) || (gate_sz > IMG_WIDTH / 4)) {
         pass_ticks = 0;
         nav_state = PASS;
       }
+
+      // Fly forward, but use a very small correction to stay centered
+      guidance_h_set_body_vel(nav_forward_speed, 0.f);
+      guidance_h_set_heading_rate(RadOfDeg(h_error * 5.0f)); 
       break;
 
-    case PASS:
-      // ... same as before ...
-    /* ── PASS: fly straight through, then search for next gate ─────────── */
     case PASS:
       guidance_h_set_body_vel(nav_forward_speed, 0.f);
       guidance_h_set_heading_rate(0.f);
       pass_ticks++;
-      printf("[gate_nav] PASS  tick=%d/%d\n", pass_ticks, PASS_TICKS);
+      int current_pass_limit = (int)(pass_time_s * 10); // assuming this function runs at 10 Hz
+      printf("[gate_nav] PASS  tick=%d/%d\n", pass_ticks, current_pass_limit);
 
-      if (pass_ticks >= PASS_TICKS) {
+      if (pass_ticks >= current_pass_limit) {
         printf("[gate_nav] Gate passed -> SEARCH\n");
         nav_state = SEARCH;
       }

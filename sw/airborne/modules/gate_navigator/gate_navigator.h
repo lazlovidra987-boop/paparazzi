@@ -9,5 +9,6 @@ extern float nav_forward_speed;   // m/s when approaching gate
 extern float nav_quality_thresh;  // min gate quality to act on
 extern float nav_align_thresh;    // normalized error to consider "aligned"
 extern float nav_search_rate;     // deg/s rotation when searching
+extern float pass_time_s;       // seconds to fly forward after entering gate
 
 #endif
