@@ -22,8 +22,8 @@
       </program>
       <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
         <arg flag="-ac" constant="@AIRCRAFT"/>
-        <arg flag="sm600.xml"/>
-        <arg flag="-d 0"/>
+        <arg flag="ps4_gamepad.xml"/>
+        <arg flag="-d" constant="0"/> <!-- # main change, works -->
       </program>
       <program name="Gazebo"/>
       <program name="RtpViewer">
@@ -64,8 +64,8 @@
       </program>
       <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
         <arg flag="-ac" constant="@AIRCRAFT"/>
-        <arg flag="sm600.xml"/>
-        <arg flag="-d 0"/>
+        <arg flag="ps4_gamepad.xml"/>
+        <arg flag="-d" constant="0"/> <!-- # main change, works -->
       </program>
       <!--program name="NatNet3">
         <arg flag="-ac 9999" constant="@AC_ID"/>
