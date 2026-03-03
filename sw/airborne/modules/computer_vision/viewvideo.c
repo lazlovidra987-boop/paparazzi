@@ -218,6 +218,11 @@ static struct image_t *viewvideo_function2(struct image_t *img, uint8_t camera_i
 void viewvideo_init(void)
 {
   viewvideo.is_streaming = true;
+  
+  #ifdef VIEWVIDEO_CAMERA
+    printf("[viewvideo] DEBUG: Raw Camera Width: %d, Height: %d\n", 
+            VIEWVIDEO_CAMERA.w, VIEWVIDEO_CAMERA.h);
+  #endif
 
   // safety check
   if(viewvideo.downsize_factor < 1){

@@ -1,0 +1,17 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="gate_navigator" dir="gate_navigator">
+  <doc>
+    <description>Flies the drone through a gate detected by cv_detect_gate.</description>
+  </doc>
+  <dep>
+    <depends>cv_detect_gate</depends>
+  </dep>
+  <header>
+    <file name="gate_navigator.h"/>
+  </header>
+  <init fun="gate_navigator_init()"/>
+  <periodic fun="gate_navigator_periodic()" freq="10"/>
+  <makefile target="ap|nps">
+    <file name="gate_navigator.c"/>
+  </makefile>
+</module>
