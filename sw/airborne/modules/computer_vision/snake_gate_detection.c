@@ -424,6 +424,11 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
   if (FILTER_IMAGE) { //filter) {
     image_yuv422_colorfilt(img, img, color_Y_min, color_Y_max, color_U_min, color_U_max, color_V_min, color_V_max);
   }
+  // draw a crosshair in the center of the image
+  struct point_t screen_center;
+  screen_center.x = img->w / 2;
+  screen_center.y = img->h / 2;
+  image_draw_crosshair(img, &screen_center, white_color, 20);
 
   if (best_gate->quality > (min_gate_quality * 2) && best_gate->n_sides >= min_n_sides) {
     // successful detection
