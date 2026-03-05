@@ -32,7 +32,7 @@
 
 /* ── Tunable parameters (also in GCS Settings) ──────────────────────────── */
 #ifndef GATE_NAV_FORWARD_SPEED
-#define GATE_NAV_FORWARD_SPEED 0.3f
+#define GATE_NAV_FORWARD_SPEED 1.0f
 #endif
 float nav_forward_speed  = GATE_NAV_FORWARD_SPEED;
 
@@ -47,12 +47,12 @@ float nav_quality_thresh = GATE_NAV_QUALITY_THRESH;
 float nav_align_thresh   = GATE_NAV_ALIGN_THRESH;
 
 #ifndef PASS_TIME_S
-#define PASS_TIME_S 2.5f      // seconds to fly forward after entering gate
+#define PASS_TIME_S 3.0f      // seconds to fly forward after entering gate
 #endif
 float pass_time_s       = PASS_TIME_S;
 
 #ifndef GATE_NAV_SEARCH_RATE
-#define GATE_NAV_SEARCH_RATE 0.02f      // deg/s rotation while searching
+#define GATE_NAV_SEARCH_RATE 2.5f      // deg/s rotation while searching
 #endif
 float nav_search_rate    = GATE_NAV_SEARCH_RATE;
 
@@ -67,6 +67,14 @@ static enum gate_nav_state nav_state = SEARCH;
 
 /* ── Simple timer ────────────────────────────────────────────────────────── */
 static int pass_ticks = 0;
+
+/* ── Debug mode ────────────────────────────────────────────────────────── */
+#define GATE_NAV_DEBUG
+#ifdef GATE_NAV_DEBUG
+#define DEBUG_PRINT(fmt, ...) printf("[gate_navigator] " fmt "\n", ##__VA_ARGS__)
+#else
+#define DEBUG_PRINT(fmt, ...) do {} while (0)
+#endif
 
 /* ── Init ────────────────────────────────────────────────────────────────── */
 void gate_navigator_init(void)
@@ -95,62 +103,75 @@ void gate_navigator_periodic(void)
   float h_error = (float)(gate_x - IMG_WIDTH / 2) / (IMG_WIDTH / 2.0f);
 
   switch (nav_state) {
-
     case SEARCH:
+      DEBUG_PRINT("SEARCH  quality=%.2f  h_error=%.2f  dist=%.2f  gate_sz=%d", quality, h_error, dist_m, gate_sz);
       guidance_h_set_body_vel(0.f, 0.f);
       guidance_h_set_heading_rate(RadOfDeg(nav_search_rate));
       if (gate_found) { nav_state = ALIGN; }
       break;
 
     case ALIGN:
-      if (!gate_found) { nav_state = SEARCH; break; }
+      DEBUG_PRINT("ALIGN   quality=%.2f  h_error=%.2f  dist=%.2f  gate_sz=%d", quality, h_error, dist_m, gate_sz);
+      if (!gate_found) { 
+        nav_state = SEARCH; 
+        break; 
+      }
       
       guidance_h_set_body_vel(0.f, 0.f);
-      
+    
       // If error is within 5% of center, stop turning and check alignment
       if (fabsf(h_error) < 0.05f) {
         guidance_h_set_heading_rate(0.f);
         nav_state = APPROACH; 
-      } else {
-        // Slow down the turn as we get closer (Proportional control)
-        // Flip to -h_error if it still turns the wrong way
+      } 
+      else {
+        // Slow down the turn as we get closer
         float smooth_yaw = h_error * 8.0f; 
         guidance_h_set_heading_rate(RadOfDeg(smooth_yaw));
       }
       break;
 
     case APPROACH:
+      DEBUG_PRINT("APPROACH quality=%.2f  h_error=%.2f  dist=%.2f  gate_sz=%d", quality, h_error, dist_m, gate_sz);
+      if (gate_found && (gate_sz > 75)) {
+        if (fabsf(h_error) < 0.10f) {
+          DEBUG_PRINT("Centered and close");
+          pass_ticks = 0;
+          nav_state = PASS;
+          break; 
+        } else {
+          //re-align
+          DEBUG_PRINT("Off-center, Re-aligning");
+          nav_state = ALIGN;
+          break;
+        }
+      }
       if (!gate_found) { 
-        pass_ticks = 0;
+        DEBUG_PRINT("Gate lost, Searching");
         nav_state = SEARCH; 
         break;
       }
-
       // If we drift too far off-center while flying, go back to ALIGN
-      if (fabsf(h_error) > 0.25f) {
+      if (fabsf(h_error) > 0.125f) {
+        DEBUG_PRINT("Drifted too far off-center, Re-aligning");
         nav_state = ALIGN;
         break;
       }
-
-      if ((dist_m > 0.f && dist_m < 1.5f) || (gate_sz > IMG_WIDTH / 4)) {
-        pass_ticks = 0;
-        nav_state = PASS;
-      }
-
       // Fly forward, but use a very small correction to stay centered
       guidance_h_set_body_vel(nav_forward_speed, 0.f);
       guidance_h_set_heading_rate(RadOfDeg(h_error * 5.0f)); 
       break;
 
     case PASS:
+      DEBUG_PRINT("PASS    quality=%.2f  h_error=%.2f  dist=%.2f  gate_sz=%d", quality, h_error, dist_m, gate_sz);
       guidance_h_set_body_vel(nav_forward_speed, 0.f);
       guidance_h_set_heading_rate(0.f);
       pass_ticks++;
       int current_pass_limit = (int)(pass_time_s * 10); // assuming this function runs at 10 Hz
-      printf("[gate_nav] PASS  tick=%d/%d\n", pass_ticks, current_pass_limit);
+      DEBUG_PRINT("PASS  tick=%d/%d", pass_ticks, current_pass_limit);
 
       if (pass_ticks >= current_pass_limit) {
-        printf("[gate_nav] Gate passed -> SEARCH\n");
+        DEBUG_PRINT("Gate passed -> SEARCH");
         nav_state = SEARCH;
       }
       break;
