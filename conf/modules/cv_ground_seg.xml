@@ -1,4 +1,4 @@
-<module name="cv_ground_seg">
+<module name="cv_ground_seg" dir="ground_seg" type="cv">
   <doc>
     <description>Ground Segmentation Module
     Detects ground based on a color filter. Optionally draws on image.
