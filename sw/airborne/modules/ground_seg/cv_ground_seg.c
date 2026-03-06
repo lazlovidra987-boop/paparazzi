@@ -26,11 +26,11 @@
  */
 
 // Own header
-#include "modules/computer_vision/cv_detect_color_object.h"
+// #include "modules/computer_vision/cv_detect_color_object.h"
 #include "modules/computer_vision/cv.h"
 #include "modules/core/abi.h"
 #include <stdint.h>
-#include "cv_ground_seg.h"
+#include "modules/ground_seg/cv_ground_seg.h"
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -61,8 +61,9 @@ uint8_t ground_cb_max = 120;    // U (chrominance) maximum threshold
 uint8_t ground_cr_min = 50;     // V (chrominance) minimum threshold
 uint8_t ground_cr_max = 140;    // V (chrominance) maximum threshold
 
-bool cod_draw1 = false;
-bool cod_draw2 = false;
+bool ground_draw1 = false;
+bool ground_draw2 = false;
+
 
 // define global variables
 struct color_object_t {
@@ -71,10 +72,10 @@ struct color_object_t {
   uint32_t color_count;
   bool updated;
 };
-struct color_object_t global_filters[2];
+struct color_object_t global_filters_ground[2];
 
 // Function
-uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
+uint32_t find_object_centroid1(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max);
@@ -85,7 +86,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
  * @param filter - which detection filter to process
  * @return img
  */
-static struct image_t *object_detector(struct image_t *img, uint8_t filter)
+static struct image_t *object_detector_next(struct image_t *img, uint8_t filter)
 {
   uint8_t lum_min, lum_max;
   uint8_t cb_min, cb_max;
@@ -94,23 +95,23 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
 
   switch (filter){
     case 1:
-      lum_min = cod_lum_min1;
-      lum_max = cod_lum_max1;
-      cb_min = cod_cb_min1;
-      cb_max = cod_cb_max1;
-      cr_min = cod_cr_min1;
-      cr_max = cod_cr_max1;
-      draw = cod_draw1;
+      lum_min = ground_lum_min;
+      lum_max = ground_lum_max;
+      cb_min = ground_cb_min;
+      cb_max = ground_cb_max;
+      cr_min = ground_cr_min;
+      cr_max = ground_cr_max;
+      draw = ground_draw1;
       break;
-    case 2:
-      lum_min = cod_lum_min2;
-      lum_max = cod_lum_max2;
-      cb_min = cod_cb_min2;
-      cb_max = cod_cb_max2;
-      cr_min = cod_cr_min2;
-      cr_max = cod_cr_max2;
-      draw = cod_draw2;
-      break;
+    // case 2:
+    //   lum_min = cod_lum_min2;
+    //   lum_max = cod_lum_max2;
+    //   cb_min = cod_cb_min2;
+    //   cb_max = cod_cb_max2;
+    //   cr_min = cod_cr_min2;
+    //   cr_max = cod_cr_max2;
+    //   draw = cod_draw2;
+    //   break;
     default:
       return img;
   };
@@ -119,67 +120,67 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
 
   // Filter and find centroid
 // Filter and find centroid (using the ground thresholds)
-uint32_t count = find_object_centroid(img, &x_c, &y_c, draw, ground_lum_min, ground_lum_max, ground_cb_min, ground_cb_max, ground_cr_min, ground_cr_max);  VERBOSE_PRINT("Color count %d: %u, threshold %u, x_c %d, y_c %d\n", camera, object_count, count_threshold, x_c, y_c);
+uint32_t count = find_object_centroid1(img, &x_c, &y_c, draw, ground_lum_min, ground_lum_max, ground_cb_min, ground_cb_max, ground_cr_min, ground_cr_max);  VERBOSE_PRINT("Color count %d: %u, threshold %u, x_c %d, y_c %d\n", camera, object_count, count_threshold, x_c, y_c);
   VERBOSE_PRINT("centroid %d: (%d, %d) r: %4.2f a: %4.2f\n", camera, x_c, y_c,
         hypotf(x_c, y_c) / hypotf(img->w * 0.5, img->h * 0.5), RadOfDeg(atan2f(y_c, x_c)));
 
   pthread_mutex_lock(&mutex);
-  global_filters[filter-1].color_count = count;
-  global_filters[filter-1].x_c = x_c;
-  global_filters[filter-1].y_c = y_c;
-  global_filters[filter-1].updated = true;
+  global_filters_ground[filter-1].color_count = count;
+  global_filters_ground[filter-1].x_c = x_c;
+  global_filters_ground[filter-1].y_c = y_c;
+  global_filters_ground[filter-1].updated = true;
   pthread_mutex_unlock(&mutex);
 
   return img;
 }
 
-struct image_t *object_detector1(struct image_t *img, uint8_t camera_id);
-struct image_t *object_detector1(struct image_t *img, uint8_t camera_id __attribute__((unused)))
+struct image_t *object_detector3(struct image_t *img, uint8_t camera_id);
+struct image_t *object_detector3(struct image_t *img, uint8_t camera_id __attribute__((unused)))
 {
-  return object_detector(img, 1);
+  return object_detector_next(img, 1);
 }
 
-struct image_t *object_detector2(struct image_t *img, uint8_t camera_id);
-struct image_t *object_detector2(struct image_t *img, uint8_t camera_id __attribute__((unused)))
+struct image_t *object_detector4(struct image_t *img, uint8_t camera_id);
+struct image_t *object_detector4(struct image_t *img, uint8_t camera_id __attribute__((unused)))
 {
-  return object_detector(img, 2);
+  return object_detector_next(img, 2);
 }
 
-void color_object_detector_init(void)
+void ground_segmentation_init(void)
 {
-  memset(global_filters, 0, 2*sizeof(struct color_object_t));
+  memset(global_filters_ground, 0, 2*sizeof(struct color_object_t));
   pthread_mutex_init(&mutex, NULL);
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA1
 #ifdef COLOR_OBJECT_DETECTOR_LUM_MIN1
-  cod_lum_min1 = COLOR_OBJECT_DETECTOR_LUM_MIN1;
-  cod_lum_max1 = COLOR_OBJECT_DETECTOR_LUM_MAX1;
-  cod_cb_min1 = COLOR_OBJECT_DETECTOR_CB_MIN1;
-  cod_cb_max1 = COLOR_OBJECT_DETECTOR_CB_MAX1;
-  cod_cr_min1 = COLOR_OBJECT_DETECTOR_CR_MIN1;
-  cod_cr_max1 = COLOR_OBJECT_DETECTOR_CR_MAX1;
+  ground_lum_min = COLOR_OBJECT_DETECTOR_LUM_MIN1; 
+  ground_lum_max = COLOR_OBJECT_DETECTOR_LUM_MAX1;
+  ground_cb_min = COLOR_OBJECT_DETECTOR_CB_MIN1;
+  ground_cb_max = COLOR_OBJECT_DETECTOR_CB_MAX1;
+  ground_cr_min = COLOR_OBJECT_DETECTOR_CR_MIN1;
+  ground_cr_max = COLOR_OBJECT_DETECTOR_CR_MAX1;
 #endif
 #ifdef COLOR_OBJECT_DETECTOR_DRAW1
-  cod_draw1 = COLOR_OBJECT_DETECTOR_DRAW1;
+  ground_draw1 = COLOR_OBJECT_DETECTOR_DRAW1;
 #endif
 
-  cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA1, object_detector1, COLOR_OBJECT_DETECTOR_FPS1, 0);
+  cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA1, object_detector3, COLOR_OBJECT_DETECTOR_FPS1, 0);
 #endif
 
-#ifdef COLOR_OBJECT_DETECTOR_CAMERA2
-#ifdef COLOR_OBJECT_DETECTOR_LUM_MIN2
-  cod_lum_min2 = COLOR_OBJECT_DETECTOR_LUM_MIN2;
-  cod_lum_max2 = COLOR_OBJECT_DETECTOR_LUM_MAX2;
-  cod_cb_min2 = COLOR_OBJECT_DETECTOR_CB_MIN2;
-  cod_cb_max2 = COLOR_OBJECT_DETECTOR_CB_MAX2;
-  cod_cr_min2 = COLOR_OBJECT_DETECTOR_CR_MIN2;
-  cod_cr_max2 = COLOR_OBJECT_DETECTOR_CR_MAX2;
-#endif
-#ifdef COLOR_OBJECT_DETECTOR_DRAW2
-  cod_draw2 = COLOR_OBJECT_DETECTOR_DRAW2;
-#endif
+// #ifdef COLOR_OBJECT_DETECTOR_CAMERA2
+// #ifdef COLOR_OBJECT_DETECTOR_LUM_MIN2
+//   ground_lum_min2 = COLOR_OBJECT_DETECTOR_LUM_MIN2;
+//   ground_lum_max2 = COLOR_OBJECT_DETECTOR_LUM_MAX2;
+//   ground_cb_min2 = COLOR_OBJECT_DETECTOR_CB_MIN2;
+//   ground_cb_max2 = COLOR_OBJECT_DETECTOR_CB_MAX2;
+//   ground_cr_min2 = COLOR_OBJECT_DETECTOR_CR_MIN2;
+//   ground_cr_max2 = COLOR_OBJECT_DETECTOR_CR_MAX2;
+// #endif
+// #ifdef COLOR_OBJECT_DETECTOR_DRAW2
+//   ground_draw2 = COLOR_OBJECT_DETECTOR_DRAW2;
+// #endif
 
-  cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA2, object_detector2, COLOR_OBJECT_DETECTOR_FPS2, 1);
-#endif
+//   cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA2, object_detector2, COLOR_OBJECT_DETECTOR_FPS2, 1);
+// #endif
 }
 
 /*
@@ -200,7 +201,7 @@ void color_object_detector_init(void)
  * @param draw - whether or not to draw on image
  * @return number of pixels of image within the filter bounds.
  */
-uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
+uint32_t find_object_centroid1(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max)
@@ -244,11 +245,11 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   return cnt;
 }
 
-void color_object_detector_periodic(void)
+void ground_segmentation_periodic(void)
 {
   static struct color_object_t local_filters[2];
   pthread_mutex_lock(&mutex);
-  memcpy(local_filters, global_filters, 2*sizeof(struct color_object_t));
+  memcpy(local_filters, global_filters_ground, 2*sizeof(struct color_object_t));
   pthread_mutex_unlock(&mutex);
 
   if(local_filters[0].updated){
