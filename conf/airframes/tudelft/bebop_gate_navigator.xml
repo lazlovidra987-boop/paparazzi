@@ -80,6 +80,10 @@
 
     <module name="gate_navigator"/>
 
+    <!-- CNN MODULE: add this module to enable CNN benchmark at startup -->
+    <!-- CNN MODULE: comment out the next line if the CNN should be disabled -->
+    <module name="gate_cnn"/>
+
     <!-- Video streaming (unchanged) -->
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA"          value="front_camera"/>

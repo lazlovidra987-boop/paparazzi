@@ -46,7 +46,7 @@ class GateDataset(Dataset):
         """
         Args:
             root_dir: base folder to resolve image paths
-            label_file: path to JSON label file (absolute or relative)
+            label_file: path to JSON label file (absolute or relative) 
             image_size: (W,H) that the network expects
         """
         self.root_dir = root_dir

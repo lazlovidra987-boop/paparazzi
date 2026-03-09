@@ -1,0 +1,19 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="gate_cnn" dir="gate_cnn">
+  <doc>
+    <description>CNN MODULE: startup benchmark for gate CNN on Bebop.</description>
+  </doc>
+
+  <header>
+    <file name="cnn.h"/>
+  </header>
+
+  <!-- CNN MODULE: run once at startup -->
+  <init fun="gate_cnn_benchmark_init()"/>
+
+  <makefile target="ap|nps">
+    <file name="cnn.c"/>
+    <file name="cnn_benchmark.c"/>
+  </makefile>
+</module>
