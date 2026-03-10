@@ -5,9 +5,9 @@
 #include "cnn.h"
 #include "cnn_benchmark.h"
 
-#define INPUT_WIDTH   240
 #define INPUT_HEIGHT  520
-#define INPUT_SIZE    (INPUT_WIDTH * INPUT_HEIGHT)
+#define INPUT_WIDTH   240
+#define INPUT_SIZE    (INPUT_HEIGHT * INPUT_WIDTH)
 
 /* CNN MODULE:
  * Number of inferences done inside one periodic call.

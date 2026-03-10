@@ -1,2 +1,4 @@
-torchvision
 torch
+onnx
+onnxruntime
+numpy
