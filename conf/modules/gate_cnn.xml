@@ -2,7 +2,7 @@
 
 <module name="gate_cnn" dir="gate_cnn">
   <doc>
-    <description>CNN MODULE: startup benchmark for gate CNN on Bebop.</description>
+    <description>CNN MODULE: periodic benchmark for gate CNN on Bebop.</description>
   </doc>
 
   <header>
@@ -10,8 +10,11 @@
     <file name="cnn_benchmark.h"/>
   </header>
 
-  <!-- CNN MODULE: run once at startup -->
+  <!-- CNN MODULE: initialization -->
   <init fun="gate_cnn_benchmark_init()"/>
+
+  <!-- CNN MODULE: periodic benchmark execution -->
+  <periodic fun="gate_cnn_benchmark_periodic()" freq="10"/>
 
   <makefile target="ap|nps">
     <file name="cnn.c"/>
