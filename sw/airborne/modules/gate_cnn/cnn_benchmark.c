@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "cnn.h"
+#include "cnn_benchmark.h"
 
 #define INPUT_WIDTH  240
 #define INPUT_HEIGHT 520
@@ -15,7 +16,6 @@ void gate_cnn_benchmark_init(void)
     static float input[INPUT_SIZE];
     float output = 0.0f;
 
-    /* CNN MODULE: fill dummy input */
     for (int i = 0; i < INPUT_SIZE; i++) {
         input[i] = (float)i * 0.001f;
     }

@@ -5,6 +5,11 @@
   </description>
 
   <firmware name="rotorcraft">
+
+    <!-- CNN MODULE: enable or disable CNN benchmark -->
+    <!-- set value="1" to enable benchmark -->
+    <!-- set value="0" to disable benchmark -->
+    <define name="CNN_ENABLE_BENCHMARK" value="1"/>
     <target name="ap" board="bebop">
       <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
