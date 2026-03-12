@@ -2,22 +2,35 @@
 
 <module name="gate_cnn" dir="gate_cnn">
   <doc>
-    <description>CNN MODULE: periodic benchmark for gate CNN on Bebop.</description>
+    <description>CNN-based gate detector. Reads the front camera, runs the CNN, and publishes heading and confidence in gate_cnn_result.</description>
+    <define name="GATE_CNN_CAMERA"         value="front_camera" description="Camera to use"/>
+    <define name="GATE_CNN_FPS"            value="10"           description="Max frames per second"/>
+    <define name="GATE_CNN_CONF_THRESHOLD" value="0.5"          description="Confidence threshold for has_gate flag"/>
+    <define name="GATE_CNN_ABI_ID"         value="255"          description="ABI sender ID"/>
   </doc>
 
+  <settings>
+    <dl_settings>
+      <dl_settings name="Gate CNN">
+        <dl_setting var="gate_cnn_conf_threshold" min="0.0" step="0.05" max="1.0" shortname="Conf Thresh"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <dep>
+    <depends>video_thread</depends>
+  </dep>
+
   <header>
-    <file name="cnn.h"/>
-    <file name="cnn_benchmark.h"/>
+    <file name="gate_cnn.h"/>
   </header>
 
-  <!-- CNN MODULE: initialization -->
-  <init fun="gate_cnn_benchmark_init()"/>
-
-  <!-- CNN MODULE: periodic benchmark execution -->
-  <periodic fun="gate_cnn_benchmark_periodic()" freq="10"/>
+  <init fun="gate_cnn_init()"/>
+  <periodic fun="gate_cnn_periodic()" freq="10"/>
 
   <makefile target="ap|nps">
-    <file name="cnn.c"/>
-    <file name="cnn_benchmark.c"/>
+    <file name="gate_cnn.c"/>
+    <file name="cnn_inference.c"/>
   </makefile>
+
 </module>

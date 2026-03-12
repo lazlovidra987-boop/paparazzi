@@ -15,8 +15,8 @@ except ImportError:
 
 
 def benchmark_pytorch(
-    height=240,
-    width=520,
+    height=120,
+    width=160,
     batch_size=1,
     num_warmup=20,
     num_runs=200,
@@ -27,20 +27,20 @@ def benchmark_pytorch(
 
     x = torch.randn(batch_size, 1, height, width, device=device)
 
+    # Warmup — model now returns (heading, confidence) tuple
     with torch.no_grad():
         for _ in range(num_warmup):
-            _ = model(x)
+            _heading, _conf = model(x)
 
     start = time.perf_counter()
 
     with torch.no_grad():
         for _ in range(num_runs):
-            _ = model(x)
+            _heading, _conf = model(x)
 
     end = time.perf_counter()
 
-    total_time = end - start
-    avg_time = total_time / num_runs
+    avg_time = (end - start) / num_runs
     fps = 1.0 / avg_time
 
     print("======================================")
@@ -52,19 +52,21 @@ def benchmark_pytorch(
     print(f"Runs              : {num_runs}")
     print(f"Average time      : {avg_time * 1000:.3f} ms")
     print(f"Approx. FPS       : {fps:.2f}")
+    print(f"<100ms target     : {'PASS' if avg_time < 0.1 else 'FAIL'}")
     print("======================================")
 
 
 def benchmark_onnx(
     onnx_path,
-    height=240,
-    width=520,
+    height=120,
+    width=160,
     batch_size=1,
     num_warmup=20,
     num_runs=200
 ):
     if not ONNX_AVAILABLE:
-        print("onnxruntime is not installed.")
+        print("onnxruntime not installed — skipping ONNX benchmark.")
+        print("Install with: pip install onnxruntime")
         return
 
     import numpy as np
@@ -84,8 +86,7 @@ def benchmark_onnx(
 
     end = time.perf_counter()
 
-    total_time = end - start
-    avg_time = total_time / num_runs
+    avg_time = (end - start) / num_runs
     fps = 1.0 / avg_time
 
     print("======================================")
@@ -97,24 +98,32 @@ def benchmark_onnx(
     print(f"Runs              : {num_runs}")
     print(f"Average time      : {avg_time * 1000:.3f} ms")
     print(f"Approx. FPS       : {fps:.2f}")
+    print(f"<100ms target     : {'PASS' if avg_time < 0.1 else 'FAIL'}")
     print("======================================")
 
 
 if __name__ == "__main__":
+    # --- PyTorch benchmark (run this on your laptop AND on the Bebop) ---
     benchmark_pytorch(
-        height=240,
-        width=520,
+        height=120,
+        width=160,
         batch_size=1,
         num_warmup=20,
         num_runs=200,
-        device="cpu"
+        device="cpu"        # Bebop has no GPU — always benchmark on CPU
     )
 
-    benchmark_onnx(
-        onnx_path=r"c:/Users/Mikes/paparazzi/sw/ground_segment/python/gate_cnn/export/direction_cnn.onnx",
-        height=240,
-        width=520,
-        batch_size=1,
-        num_warmup=20,
-        num_runs=200
-    )
+    # --- ONNX benchmark (optional, update path to your exported file) ---
+    onnx_path = os.path.join(os.path.dirname(__file__), "direction_cnn.onnx")
+    if os.path.exists(onnx_path):
+        benchmark_onnx(
+            onnx_path=onnx_path,
+            height=120,
+            width=160,
+            batch_size=1,
+            num_warmup=20,
+            num_runs=200,
+        )
+    else:
+        print(f"ONNX file not found at {onnx_path}, skipping ONNX benchmark.")
+        print("Run export_onnx.py first to generate it.")

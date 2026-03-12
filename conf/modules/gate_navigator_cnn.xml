@@ -1,0 +1,37 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="gate_navigator_cnn" dir="gate_navigator">
+  <doc>
+    <description>CNN-based gate navigation. Reads heading and confidence from gate_cnn and flies the drone through detected gates in GUIDED mode.</description>
+  </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings name="Gate Navigator CNN">
+        <dl_setting var="cnn_nav_forward_speed"   min="0.0"  step="0.05" max="2.0"  shortname="Fwd Speed"/>
+        <dl_setting var="cnn_nav_conf_thresh"     min="0.0"  step="0.05" max="1.0"  shortname="Conf Thresh"/>
+        <dl_setting var="cnn_nav_align_thresh"    min="0.01" step="0.01" max="0.3"  shortname="Align Thresh"/>
+        <dl_setting var="cnn_nav_search_rate"     min="1.0"  step="0.5"  max="20.0" shortname="Search Rate"/>
+        <dl_setting var="cnn_nav_yaw_gain"        min="1.0"  step="1.0"  max="30.0" shortname="Yaw Gain"/>
+        <dl_setting var="cnn_nav_approach_time_s" min="1.0"  step="0.5"  max="10.0" shortname="Approach T"/>
+        <dl_setting var="cnn_nav_pass_time_s"     min="0.5"  step="0.5"  max="8.0"  shortname="Pass T"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <dep>
+    <depends>gate_cnn</depends>
+  </dep>
+
+  <header>
+    <file name="gate_navigator_cnn.h"/>
+  </header>
+
+  <init fun="gate_navigator_cnn_init()"/>
+  <periodic fun="gate_navigator_cnn_periodic()" freq="10"/>
+
+  <makefile target="ap|nps">
+    <file name="gate_navigator_cnn.c"/>
+  </makefile>
+
+</module>
