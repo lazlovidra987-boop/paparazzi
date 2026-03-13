@@ -188,16 +188,11 @@ static uint32_t ground_seg_find_centroid(struct image_t *img,
         tot_x += x;
         tot_y += y;
 
-        /*
-         * If drawing is enabled, brighten the Y channel
-         * so detected pixels become visible in the RTP feed.
-         */
         if (draw) {
-          /* Paint detected ground pixels with a strong artificial color */
+          /* very visible debug color */
           *yp = 150;
           *up = 40;
           *vp = 20;
-        }
         }
       }
     }
@@ -205,8 +200,6 @@ static uint32_t ground_seg_find_centroid(struct image_t *img,
 
   /*
    * If any ground pixels were found, compute centroid relative to image center.
-   * Positive x_c means right of center.
-   * Positive y_c means above center.
    */
   if (cnt > 0) {
     *p_xc = (int32_t)roundf((tot_x / (float)cnt) - img->w * 0.5f);
@@ -218,6 +211,7 @@ static uint32_t ground_seg_find_centroid(struct image_t *img,
 
   return cnt;
 }
+
 
 /*
  * Periodic function called by Paparazzi.
