@@ -5,7 +5,10 @@
  * - Read frames from one camera in YUV422 format
  * - Detect ground pixels using Y, Cb, Cr thresholds
  * - Compute centroid of detected ground region
- * - Optionally draw the detected pixels in the image
+ * - Split detected pixels into:
+ *     1) vertical regions: left / center / right
+ *     2) horizontal regions: top / middle / bottom
+ * - Optionally draw detected pixels and region divider lines in the image
  * - Send result through ABI so other modules can use it
  */
 
@@ -20,25 +23,23 @@
 #include <math.h>
 #include <pthread.h>
 #include <string.h>
-#include <pthread.h>
 
-/* Simple debug print macro */
+/* Debug print macro */
 #define GS_PRINT(string, ...) fprintf(stderr, "[cv_ground_seg->%s()] " string, __FUNCTION__, ##__VA_ARGS__)
 
 /*
- * If the XML does not define a custom FPS,
- * use 0 = run at camera frame rate.
+ * If not defined in XML, run at camera frame rate.
  */
 #ifndef GROUND_SEGMENTATION_FPS
 #define GROUND_SEGMENTATION_FPS 0
 #endif
 
-/* Mutex protects shared segmentation result */
+/* Mutex for sharing detection result safely between callback and periodic task */
 static pthread_mutex_t ground_seg_mutex;
 
 /*
- * Threshold values for ground detection in YCbCr / YUV space.
- * These can be tuned from the Paparazzi settings interface.
+ * Ground segmentation thresholds in YUV / YCbCr space.
+ * These can be tuned from Paparazzi settings.
  */
 uint8_t ground_lum_min = 50;
 uint8_t ground_lum_max = 150;
@@ -47,25 +48,30 @@ uint8_t ground_cb_max  = 120;
 uint8_t ground_cr_min  = 50;
 uint8_t ground_cr_max  = 140;
 
-/* Whether detected ground pixels should be highlighted in the image */
+/* Whether detected pixels should be highlighted in the image */
 bool ground_draw = true;
 
 /*
- * Struct holding the latest ground segmentation result.
- *
- * x_c, y_c:
- *   centroid coordinates relative to image center
- *
- * pixel_count:
- *   number of pixels classified as ground
- *
- * updated:
- *   true when a new result is available
+ * Stores the latest segmentation result.
  */
 struct ground_seg_result_t {
+  /* Global centroid of all detected ground pixels */
   int32_t x_c;
   int32_t y_c;
+
+  /* Total number of detected ground pixels */
   uint32_t pixel_count;
+
+  /* Vertical split */
+  uint32_t left_count;
+  uint32_t center_count;
+  uint32_t right_count;
+
+  /* Horizontal split */
+  uint32_t top_count;
+  uint32_t middle_count;
+  uint32_t bottom_count;
+
   bool updated;
 };
 
@@ -73,45 +79,76 @@ struct ground_seg_result_t {
 static struct ground_seg_result_t ground_seg_result;
 
 /*
- * Forward declaration:
- * scan image, segment ground pixels, compute centroid
+ * Forward declaration
  */
-static uint32_t ground_seg_find_centroid(struct image_t *img,
+static uint32_t ground_seg_analyse_image(struct image_t *img,
                                          int32_t *p_xc,
                                          int32_t *p_yc,
+                                         uint32_t *p_left_count,
+                                         uint32_t *p_center_count,
+                                         uint32_t *p_right_count,
+                                         uint32_t *p_top_count,
+                                         uint32_t *p_middle_count,
+                                         uint32_t *p_bottom_count,
                                          bool draw);
 
 /*
  * Main image-processing callback.
- * This is called automatically whenever a new camera frame is available.
+ * Called automatically whenever a new camera frame is available.
  */
 static struct image_t *ground_seg_process_image(struct image_t *img, uint8_t camera_id)
 {
-  /* We do not use the camera_id because this module uses only one camera */
-  (void)camera_id;
+  (void)camera_id; /* single-camera module */
 
   int32_t x_c = 0;
   int32_t y_c = 0;
 
-  /* Run segmentation and compute centroid */
-  uint32_t count = ground_seg_find_centroid(img, &x_c, &y_c, ground_draw);
-  GS_PRINT("Frame processed: count=%u x_c=%d y_c=%d\n", count, x_c, y_c);
+  uint32_t left_count = 0;
+  uint32_t center_count = 0;
+  uint32_t right_count = 0;
 
+  uint32_t top_count = 0;
+  uint32_t middle_count = 0;
+  uint32_t bottom_count = 0;
 
-  /* Store the result safely for the periodic task */
+  uint32_t count = ground_seg_analyse_image(img,
+                                            &x_c,
+                                            &y_c,
+                                            &left_count,
+                                            &center_count,
+                                            &right_count,
+                                            &top_count,
+                                            &middle_count,
+                                            &bottom_count,
+                                            ground_draw);
+
   pthread_mutex_lock(&ground_seg_mutex);
   ground_seg_result.x_c = x_c;
   ground_seg_result.y_c = y_c;
   ground_seg_result.pixel_count = count;
+
+  ground_seg_result.left_count = left_count;
+  ground_seg_result.center_count = center_count;
+  ground_seg_result.right_count = right_count;
+
+  ground_seg_result.top_count = top_count;
+  ground_seg_result.middle_count = middle_count;
+  ground_seg_result.bottom_count = bottom_count;
+
   ground_seg_result.updated = true;
   pthread_mutex_unlock(&ground_seg_mutex);
+
+  GS_PRINT("Frame processed: total=%u | L=%u C=%u R=%u | T=%u M=%u B=%u | x_c=%d y_c=%d\n",
+           count,
+           left_count, center_count, right_count,
+           top_count, middle_count, bottom_count,
+           x_c, y_c);
 
   return img;
 }
 
 /*
  * Module initialization.
- * Called once at startup.
  */
 void ground_segmentation_init(void)
 {
@@ -132,29 +169,46 @@ void ground_segmentation_init(void)
   GS_PRINT("Ground segmentation initialized\n");
 }
 
-
 /*
- * Find centroid of all pixels that satisfy the ground thresholds.
+ * Analyse the image:
+ * - classify pixels as ground / not ground
+ * - compute centroid
+ * - count per vertical and horizontal region
+ * - optionally draw segmentation and divider lines
  *
- * Input image format: YUV422
- *
- * In YUV422, every pair of pixels is stored as:
- *   U Y1 V Y2
- *
- * So for even and odd x positions, the indexing differs.
+ * Image format is YUV422:
+ * each pair of pixels is stored as U Y1 V Y2
  */
-static uint32_t ground_seg_find_centroid(struct image_t *img,
+static uint32_t ground_seg_analyse_image(struct image_t *img,
                                          int32_t *p_xc,
                                          int32_t *p_yc,
+                                         uint32_t *p_left_count,
+                                         uint32_t *p_center_count,
+                                         uint32_t *p_right_count,
+                                         uint32_t *p_top_count,
+                                         uint32_t *p_middle_count,
+                                         uint32_t *p_bottom_count,
                                          bool draw)
 {
   uint32_t cnt = 0;
   uint32_t tot_x = 0;
   uint32_t tot_y = 0;
 
+  uint32_t left_count = 0;
+  uint32_t center_count = 0;
+  uint32_t right_count = 0;
+
+  uint32_t top_count = 0;
+  uint32_t middle_count = 0;
+  uint32_t bottom_count = 0;
+
   uint8_t *buffer = img->buf;
 
-  /* Loop over all image pixels */
+  const uint16_t x_div1 = img->w / 3;
+  const uint16_t x_div2 = (2 * img->w) / 3;
+  const uint16_t y_div1 = img->h / 3;
+  const uint16_t y_div2 = (2 * img->h) / 3;
+
   for (uint16_t y = 0; y < img->h; y++) {
     for (uint16_t x = 0; x < img->w; x++) {
 
@@ -162,23 +216,30 @@ static uint32_t ground_seg_find_centroid(struct image_t *img,
       uint8_t *up;
       uint8_t *vp;
 
-      /*
-       * Reconstruct Y, U, V pointers depending on whether x is even or odd.
-       */
+      /* Recover Y, U, V pointers depending on even/odd x in YUV422 */
       if ((x % 2) == 0) {
-        /* Even pixel: U Y1 V Y2 */
         up = &buffer[y * 2 * img->w + 2 * x];
         yp = &buffer[y * 2 * img->w + 2 * x + 1];
         vp = &buffer[y * 2 * img->w + 2 * x + 2];
       } else {
-        /* Odd pixel uses same U and V but its own Y */
         up = &buffer[y * 2 * img->w + 2 * x - 2];
         vp = &buffer[y * 2 * img->w + 2 * x];
         yp = &buffer[y * 2 * img->w + 2 * x + 1];
       }
 
       /*
-       * Check if pixel lies inside the ground threshold box in YUV space.
+       * Draw divider lines for debugging:
+       * - two vertical lines split left/center/right
+       * - two horizontal lines split top/middle/bottom
+       */
+      if (draw) {
+        if (x == x_div1 || x == x_div2 || y == y_div1 || y == y_div2) {
+          *yp = 255;  /* bright line */
+        }
+      }
+
+      /*
+       * Check if pixel lies inside the ground threshold box.
        */
       if ((*yp >= ground_lum_min) && (*yp <= ground_lum_max) &&
           (*up >= ground_cb_min)  && (*up <= ground_cb_max)  &&
@@ -188,8 +249,29 @@ static uint32_t ground_seg_find_centroid(struct image_t *img,
         tot_x += x;
         tot_y += y;
 
+        /* Vertical split: left / center / right */
+        if (x < x_div1) {
+          left_count++;
+        } else if (x < x_div2) {
+          center_count++;
+        } else {
+          right_count++;
+        }
+
+        /* Horizontal split: top / middle / bottom */
+        if (y < y_div1) {
+          top_count++;
+        } else if (y < y_div2) {
+          middle_count++;
+        } else {
+          bottom_count++;
+        }
+
+        /*
+         * Draw detected ground in a strong artificial color.
+         * This is for debugging in RTP.
+         */
         if (draw) {
-          /* very visible debug color */
           *yp = 150;
           *up = 40;
           *vp = 20;
@@ -199,7 +281,9 @@ static uint32_t ground_seg_find_centroid(struct image_t *img,
   }
 
   /*
-   * If any ground pixels were found, compute centroid relative to image center.
+   * Compute centroid relative to image center.
+   * x_c > 0 : centroid right of center
+   * y_c > 0 : centroid above center
    */
   if (cnt > 0) {
     *p_xc = (int32_t)roundf((tot_x / (float)cnt) - img->w * 0.5f);
@@ -209,29 +293,33 @@ static uint32_t ground_seg_find_centroid(struct image_t *img,
     *p_yc = 0;
   }
 
+  *p_left_count = left_count;
+  *p_center_count = center_count;
+  *p_right_count = right_count;
+
+  *p_top_count = top_count;
+  *p_middle_count = middle_count;
+  *p_bottom_count = bottom_count;
+
   return cnt;
 }
-
 
 /*
  * Periodic function called by Paparazzi.
  * Sends the newest segmentation result through ABI.
+ *
+ * For now we keep using VISUAL_DETECTION for compatibility and debugging.
  */
 void ground_segmentation_periodic(void)
 {
   struct ground_seg_result_t local_result;
 
-  /* Copy result safely */
   pthread_mutex_lock(&ground_seg_mutex);
   memcpy(&local_result, &ground_seg_result, sizeof(local_result));
   ground_seg_result.updated = false;
   pthread_mutex_unlock(&ground_seg_mutex);
 
   if (local_result.updated) {
-    /*
-     * Send centroid and pixel count as a visual detection message.
-     * You can later replace COLOR_OBJECT_DETECTION1_ID with your own ID if needed.
-     */
     AbiSendMsgVISUAL_DETECTION(
       COLOR_OBJECT_DETECTION1_ID,
       local_result.x_c,
@@ -242,33 +330,15 @@ void ground_segmentation_periodic(void)
       0
     );
 
-    GS_PRINT("Ground detected: x_c=%d y_c=%d count=%u\n",
+    GS_PRINT("Ground detected: total=%u | L=%u C=%u R=%u | T=%u M=%u B=%u | x_c=%d y_c=%d\n",
+             local_result.pixel_count,
+             local_result.left_count,
+             local_result.center_count,
+             local_result.right_count,
+             local_result.top_count,
+             local_result.middle_count,
+             local_result.bottom_count,
              local_result.x_c,
-             local_result.y_c,
-             local_result.pixel_count);
+             local_result.y_c);
   }
 }
-
-
-
-// Each frame:
-
-// the callback reads the image
-
-// every pixel is converted from raw YUV422 memory layout into Y, U, V
-
-// the code checks whether that pixel matches the ground thresholds
-
-// if yes:
-
-// pixel count increases
-
-// x and y are added for centroid
-
-// pixel is brightened if drawing is enabled
-
-// Then:
-
-// the centroid is computed
-
-// the result is stored - the periodic task sends it via ABI
