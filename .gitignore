@@ -29,6 +29,10 @@
 
 # python venv
 pprzEnv/
+.venv/
+
+# local vscode files
+.vscode/tasks.json
 
 # Eclipse IDE project files
 *.cproject
