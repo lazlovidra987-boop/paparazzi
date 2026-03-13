@@ -171,7 +171,8 @@ static void draw_centre_line_yuv422(
 
 
 /* ------------------------------------------------------------------ */
-/* Nearest-neighbour resize + Y-channel extract                        */
+/* Nearest-neighbour resize + Y-channel extract (original version)     */
+/* This version assumes stride = src_w * 2 (no padding)                */
 /* ------------------------------------------------------------------ */
 static void yuv422_to_cnn_input(
     const uint8_t *src,
@@ -191,23 +192,62 @@ static void yuv422_to_cnn_input(
 
 
 /* ------------------------------------------------------------------ */
-/* Camera thread callback                                               */
+/* Safe YUV422 extraction with explicit stride parameter               */
+/* This version handles camera stride correctly (with padding)         */
 /* ------------------------------------------------------------------ */
-static struct image_t *gate_cnn_func(struct image_t *img,
-                                     uint8_t camera_id __attribute__((unused)))
+static void yuv422_to_cnn_input_safe(
+    const uint8_t *src,
+    int            stride_bytes,   /* bytes per row, not just width*2 */
+    int            src_w,
+    int            src_h,
+    float         *dst)
 {
-    if (img == NULL || img->buf == NULL) {
-        return img;
+    if (!src || !dst || src_w <= 0 || src_h <= 0) {
+        return;
     }
 
-    /* 1. Extract Y channel and resize to CNN input */
-    yuv422_to_cnn_input(
+    for (int dy = 0; dy < CNN_INPUT_H; dy++) {
+        int sy = (dy * src_h) / CNN_INPUT_H;
+        if (sy >= src_h) sy = src_h - 1;
+
+        for (int dx = 0; dx < CNN_INPUT_W; dx++) {
+            int sx = (dx * src_w) / CNN_INPUT_W;
+            if (sx >= src_w) sx = src_w - 1;
+
+            /* YUV422 UYVY: U0 Y0 V0 Y1 U2 Y2 V2 Y3 ...
+             * For pixel sx:
+             *   Pixel pair index: sx / 2
+             *   Y offset in pair: sx % 2 ? 3 : 1
+             *   Absolute byte: (sx/2)*4 + (sx%2 ? 3 : 1)
+             */
+            int y_byte_offset = ((sx / 2) * 4) + (sx % 2 ? 3 : 1);
+            uint8_t y_byte = src[sy * stride_bytes + y_byte_offset];
+            dst[dy * CNN_INPUT_W + dx] = (float)y_byte * (1.0f / 255.0f);
+        }
+    }
+}
+
+
+
+
+/* ------------------------------------------------------------------ */
+/* Camera thread callback                                               */
+/* ------------------------------------------------------------------ */
+static struct image_t *gate_cnn_func(struct image_t *img, uint8_t camera_id)
+{
+    if (img == NULL || img->buf == NULL) return img;
+    
+    // Extract Y channel with proper stride handling
+    // stride_bytes = img->w * 2 for standard YUV422 (no padding)
+    // If real camera has padding, this may need adjustment
+    yuv422_to_cnn_input_safe(
         (const uint8_t *)img->buf,
-        img->w,
-        img->h,
+        img->w * 2,  // YUV422 stride = width_pixels * 2 (assuming no padding)
+        img->w,      // width in pixels
+        img->h,      // height in pixels
         cnn_input
     );
-
+    
     /* 2. Run CNN forward pass */
     float  heading, confidence;
     double t0 = now_ms();

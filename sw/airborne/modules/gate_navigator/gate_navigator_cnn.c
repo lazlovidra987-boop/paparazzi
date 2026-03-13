@@ -112,7 +112,7 @@ void gate_navigator_cnn_periodic(void)
     if (guidance_h.mode != GUIDANCE_H_MODE_GUIDED) {
         return;
     }
-    guidance_v_set_vel(0); 
+    guidance_v_set_vz(0.0f);
     /* ── Read CNN output ────────────────────────────────────────────── */
     float   heading    = gate_cnn_result.heading;     /* [-1, 1] */
     float   confidence = gate_cnn_result.confidence;  /* [0,  1] */
