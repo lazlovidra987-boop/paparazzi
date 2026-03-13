@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="cv_ground_seg" dir="ground_seg" type="cv">
+<module name="cv_ground_seg" dir="ground_seg">
   <doc>
     <description>
       Ground Segmentation Module
