@@ -27,6 +27,7 @@
 #include "autopilot.h"
 #include "firmwares/rotorcraft/autopilot_guided.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "firmwares/rotorcraft/guidance/guidance_v.h"   // ADD THIS
 #include "generated/airframe.h"
 #include "state.h"
 
@@ -111,7 +112,7 @@ void gate_navigator_cnn_periodic(void)
     if (guidance_h.mode != GUIDANCE_H_MODE_GUIDED) {
         return;
     }
-
+    guidance_v_set_vel(0); 
     /* ── Read CNN output ────────────────────────────────────────────── */
     float   heading    = gate_cnn_result.heading;     /* [-1, 1] */
     float   confidence = gate_cnn_result.confidence;  /* [0,  1] */
