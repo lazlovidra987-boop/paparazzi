@@ -21,6 +21,8 @@
 #include <pthread.h>
 #include <string.h>
 #include <pthread.h>
+#include "../../../../../../../usr/include/newlib/sys/_pthreadtypes.h"
+#include <sys/_pthreadtypes.h>
 
 /* Simple debug print macro */
 #define GS_PRINT(string, ...) fprintf(stderr, "[cv_ground_seg->%s()] " string, __FUNCTION__, ##__VA_ARGS__)
@@ -95,8 +97,6 @@ static struct image_t *ground_seg_process_image(struct image_t *img, uint8_t cam
 
   /* Run segmentation and compute centroid */
   uint32_t count = ground_seg_find_centroid(img, &x_c, &y_c, ground_draw);
-  GS_PRINT("Frame processed: count=%u x_c=%d y_c=%d\n", count, x_c, y_c);
-
 
   /* Store the result safely for the periodic task */
   pthread_mutex_lock(&ground_seg_mutex);
@@ -193,11 +193,7 @@ static uint32_t ground_seg_find_centroid(struct image_t *img,
          * so detected pixels become visible in the RTP feed.
          */
         if (draw) {
-          /* Paint detected ground pixels with a strong artificial color */
-          *yp = 150;
-          *up = 40;
-          *vp = 20;
-        }
+          *yp = 255;
         }
       }
     }

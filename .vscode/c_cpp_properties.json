@@ -9,10 +9,14 @@
                 "limitSymbolsToIncludedHeaders": true
             },
             "includePath": [
-                "${workspaceFolder}"
+                "${workspaceFolder}",
+                "${workspaceFolder}/sw/airborne",
+                "${workspaceFolder}/sw/include",
+                "${workspaceFolder}/var/include",
+                "${workspaceFolder}/var/aircrafts/**"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+            "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "clang-x64"
