@@ -10,7 +10,7 @@
       <define name="LOGGER_FILE_PATH"   value="/data/ftp/internal_000/log"/>
       <define name="MT9V117_TARGET_FPS" value="10"/>
       
-      <configure name="HOST_C_OPTIMIZE" value="-O3 -mfpu=neon -mfloat-abi=hard -ftree-vectorize"/>
+      <configure name="USER_CFLAGS" value="-O3 -mfpu=neon -mfloat-abi=softfp -ftree-vectorize"/>
 
       <module name="ahrs" type="int_cmpl_quat">
         <configure name="USE_MAGNETOMETER" value="FALSE"/>
@@ -39,7 +39,9 @@
     <module name="gps"           type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
+    
     <module name="ins"           type="extended"/><!--float_invariant-->
+    
     <module name="logger_file"/>
 
     <module name="bebop_cam"/>
@@ -105,8 +107,9 @@
   <section name="BEBOP_FRONT_CAMERA" prefix="MT9F002_">
     <define name="OUTPUT_WIDTH"    value="240"/>
     <define name="OUTPUT_HEIGHT"   value="360"/>
-    <define name="OFFSET_X"        value="0.09"/>
-    <define name="ZOOM"            value="0.8"/>
+    <define name="OFFSET_X"        value="0.0"/>
+    <define name="OFFSET_Y"        value="0.09"/>
+    <define name="ZOOM"            value="1"/>
     <define name="GAIN_GREEN1"     value="10.0"/>
     <define name="GAIN_GREEN2"     value="10.0"/>
     <define name="GAIN_BLUE"       value="12.5"/>
