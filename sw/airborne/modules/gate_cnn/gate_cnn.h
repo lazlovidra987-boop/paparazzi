@@ -39,7 +39,7 @@
 /* Public result struct — read this from your guidance module if needed. */
 struct gate_cnn_result_t {
   float   heading;      /* normalised heading [-1, 1] */
-  float   confidence;   /* gate visible probability [0, 1] */
+  float   gate_measure;   /* gate visible probability [0, 1] */
   uint8_t has_gate;     /* 1 if confidence > threshold, else 0 */
   uint32_t frame_count; /* number of frames processed */
 };

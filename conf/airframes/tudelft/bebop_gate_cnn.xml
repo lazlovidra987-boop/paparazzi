@@ -8,7 +8,9 @@
     <target name="ap" board="bebop">
       <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
       <define name="LOGGER_FILE_PATH"   value="/data/ftp/internal_000/log"/>
-      <define name="MT9V117_TARGET_FPS" value="20"/>
+      <define name="MT9V117_TARGET_FPS" value="10"/>
+      
+      <configure name="HOST_C_OPTIMIZE" value="-O3 -mfpu=neon -mfloat-abi=hard -ftree-vectorize"/>
 
       <module name="ahrs" type="int_cmpl_quat">
         <configure name="USE_MAGNETOMETER" value="FALSE"/>
@@ -29,7 +31,6 @@
 
     <define name="ARRIVED_AT_WAYPOINT" value="0.3"/>
 
-    <!-- Core subsystems -->
     <module name="telemetry"     type="transparent_udp"/>
     <module name="radio_control" type="datalink"/>
     <module name="motor_mixing"/>
@@ -38,25 +39,22 @@
     <module name="gps"           type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
-    <module name="ins"           type="extended"/>
+    <module name="ins"           type="extended"/><!--float_invariant-->
     <module name="logger_file"/>
 
-    <!-- Camera -->
     <module name="bebop_cam"/>
     <module name="video_capture">
       <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
-      <define name="VIDEO_CAPTURE_FPS"    value="10"/>
+      <define name="VIDEO_CAPTURE_FPS"    value="3"/>
     </module>
 
-    <!-- CNN gate detector -->
     <module name="gate_cnn">
       <define name="GATE_CNN_CAMERA"         value="front_camera"/>
-      <define name="GATE_CNN_FPS"            value="10"/>
+      <define name="GATE_CNN_FPS"            value="2"/>
       <define name="GATE_CNN_CONF_THRESHOLD" value="0.5"/>
       <define name="GATE_CNN_ABI_ID"         value="255"/>
     </module>
 
-    <!-- CNN navigator -->
     <module name="gate_navigator_cnn">
       <define name="CNN_NAV_FORWARD_SPEED"  value="0.75"/>
       <define name="CNN_NAV_CONF_THRESH"    value="0.6"/>
@@ -67,10 +65,8 @@
       <define name="CNN_NAV_PASS_TIME_S"    value="2.5"/>
     </module>
 
-    <!-- Video streaming -->
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA"          value="front_camera"/>
-      <define name="VIEWVIDEO_CAMERA2"         value="bottom_camera"/>
       <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
       <define name="VIEWVIDEO_QUALITY_FACTOR"  value="40"/>
     </module>
@@ -107,10 +103,10 @@
   </command_laws>
 
   <section name="BEBOP_FRONT_CAMERA" prefix="MT9F002_">
-    <define name="OUTPUT_HEIGHT"   value="520"/>
     <define name="OUTPUT_WIDTH"    value="240"/>
+    <define name="OUTPUT_HEIGHT"   value="360"/>
     <define name="OFFSET_X"        value="0.09"/>
-    <define name="ZOOM"            value="1.25"/>
+    <define name="ZOOM"            value="0.8"/>
     <define name="GAIN_GREEN1"     value="10.0"/>
     <define name="GAIN_GREEN2"     value="10.0"/>
     <define name="GAIN_BLUE"       value="12.5"/>

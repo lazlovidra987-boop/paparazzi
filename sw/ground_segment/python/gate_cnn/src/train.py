@@ -25,7 +25,7 @@ Then open:
 
 Current label layout (from dataset.py)
 --------------------------------------
-  labels[:, 0] = has_gate   (0 or 1)
+  labels[:, 0] = gate_commitment   (0 or 1)
   labels[:, 1] = heading    (float in [-1, 1])
 
 Current training setup
@@ -98,11 +98,11 @@ def make_weighted_sampler(dataset) -> WeightedRandomSampler:
         raw_data = dataset.parent.data
         indices = dataset.indices
         for i in indices:
-            labels.append(int(raw_data[i].get("has_gate", 0)))
+            labels.append(int(raw_data[i].get("gate_commitment", 0)))
 
     elif isinstance(dataset, GateDataset):
         for entry in dataset.data:
-            labels.append(int(entry.get("has_gate", 0)))
+            labels.append(int(entry.get("gate_commitment", 0)))
 
     else:
         raise TypeError(f"Unsupported dataset type: {type(dataset)}")
@@ -150,21 +150,21 @@ def compute_loss(
         total_loss, heading_loss, gate_loss
 
     Current label layout:
-      labels[:, 0] = has_gate  (0 or 1)
+      labels[:, 0] = gate_commitment  (0 or 1)
       labels[:, 1] = heading   (float in [-1, 1])
 
     Current model outputs:
       pred_heading = heading in [-1,1]
       pred_gate    = gate probability in [0,1]
     """
-    gt_has_gate = labels[:, 0]
+    gt_gate_commitment = labels[:, 0]
     gt_heading = labels[:, 1]
 
     # Gate loss for every sample
-    gate_loss = nn.BCELoss()(pred_gate, gt_has_gate)
+    gate_loss = nn.BCELoss()(pred_gate, gt_gate_commitment)
 
     # Heading loss only when a gate is present
-    gate_mask = gt_has_gate > 0.5
+    gate_mask = gt_gate_commitment > 0.5
     if gate_mask.sum() > 0:
         heading_loss = nn.MSELoss()(
             pred_heading[gate_mask],
@@ -226,8 +226,8 @@ def validate(model, loader, device, heading_weight, gate_weight):
             h_sum += h_loss.item()
             g_sum += g_loss.item()
 
-            gt_has_gate = labels[:, 0]
-            correct += ((pred_g > 0.5).float() == gt_has_gate).sum().item()
+            gt_gate_commitment = labels[:, 0]
+            correct += ((pred_g > 0.5).float() == gt_gate_commitment).sum().item()
             total += labels.size(0)
 
     n = len(loader)

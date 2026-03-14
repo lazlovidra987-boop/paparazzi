@@ -7,7 +7,7 @@ What each sample contains
 --------------------------
   image : FloatTensor  [1, 120, 160]   grayscale, pixels in [0, 1]
   label : FloatTensor  [2]
-            label[0] = has_gate   0.0 or 1.0
+            label[0] = gate_commitment   0.0 or 1.0
             label[1] = heading    in [-1, 1]
 
 CAMERA ORIENTATION NOTE
@@ -28,8 +28,8 @@ and heading is recomputed from cy after augmentation.
 JSON label file format
 -----------------------
 [
-  { "image": "frame_000001.jpg", "has_gate": 1, "heading":  0.35 },
-  { "image": "frame_000002.jpg", "has_gate": 0, "heading":  0.0  },
+  { "image": "frame_000001.jpg", "gate_commitment": 1, "heading":  0.35 },
+  { "image": "frame_000002.jpg", "gate_commitment": 0, "heading":  0.0  },
   ...
 ]
 
@@ -121,7 +121,7 @@ class GateDataset(Dataset):
         image    = image.resize((CNN_INPUT_W, CNN_INPUT_H), Image.BILINEAR)
 
         # 2. Read labels
-        has_gate = float(entry.get("has_gate", 0))
+        gate_commitment = float(entry.get("gate_commitment", 0))
         heading  = float(entry.get("heading",  0.0))
         heading  = max(-1.0, min(1.0, heading))
 
@@ -133,16 +133,16 @@ class GateDataset(Dataset):
 
         # 4. Augmentation (training only)
         if self.augment:
-            image, cx, cy = self._augment(image, cx, cy, has_gate)
+            image, cx, cy = self._augment(image, cx, cy, gate_commitment)
             # Recompute heading from moved gate centre (vertical axis)
-            if has_gate:
+            if gate_commitment:
                 heading = _cy_to_heading(cy, CNN_INPUT_H)
                 heading = max(-1.0, min(1.0, heading))
 
         # 5. To tensor [1, H, W] in [0, 1]
         image = TF.to_tensor(image)
 
-        label = torch.tensor([has_gate, heading], dtype=torch.float32)
+        label = torch.tensor([gate_commitment, heading], dtype=torch.float32)
         return image, label
 
     # ------------------------------------------------------------------
@@ -154,7 +154,7 @@ class GateDataset(Dataset):
         image:    Image.Image,
         cx:       float,
         cy:       float,
-        has_gate: float,
+        gate_commitment: float,
     ) -> Tuple[Image.Image, float, float]:
 
         W, H = CNN_INPUT_W, CNN_INPUT_H
@@ -164,7 +164,7 @@ class GateDataset(Dataset):
         # Flipping vertically negates heading.
         if random.random() < P_VFLIP:
             image = TF.vflip(image)
-            if has_gate:
+            if gate_commitment:
                 cy = (H - 1) - cy   # cy reflects around H/2 -> heading negated
 
         # --- Horizontal flip ------------------------------------------
@@ -173,7 +173,7 @@ class GateDataset(Dataset):
         if random.random() < P_HFLIP:
             image = TF.hflip(image)
             # cx flips but heading is unaffected
-            if has_gate:
+            if gate_commitment:
                 cx = (W - 1) - cx
 
         # --- Rotation +/-15 deg --------------------------------------
@@ -183,7 +183,7 @@ class GateDataset(Dataset):
             image = TF.rotate(image, angle,
                               interpolation=TF.InterpolationMode.BILINEAR,
                               fill=0)
-            if has_gate:
+            if gate_commitment:
                 a  = math.radians(angle)
                 dx = cx - W / 2.0
                 dy = cy - H / 2.0
@@ -201,7 +201,7 @@ class GateDataset(Dataset):
             if right - left > 10 and bottom - top > 10:
                 image = TF.crop(image, top, left, bottom - top, right - left)
                 image = image.resize((W, H), Image.BILINEAR)
-                if has_gate:
+                if gate_commitment:
                     cx = (cx - left)   / (right  - left)  * W
                     cy = (cy - top)    / (bottom - top)   * H
 
@@ -219,7 +219,7 @@ class GateDataset(Dataset):
         # --- Perspective warp ----------------------------------------
         if random.random() < P_PERSPECTIVE:
             image, cx, cy = _apply_perspective(
-                image, cx, cy, has_gate, distortion=PERSP_DISTORTION)
+                image, cx, cy, gate_commitment, distortion=PERSP_DISTORTION)
 
         # Clamp to image bounds
         cx = max(0.0, min(float(W - 1), cx))
@@ -258,7 +258,7 @@ def _apply_perspective(
     image:      Image.Image,
     cx:         float,
     cy:         float,
-    has_gate:   float,
+    gate_commitment:   float,
     distortion: float,
 ) -> Tuple[Image.Image, float, float]:
     try:
@@ -291,7 +291,7 @@ def _apply_perspective(
                                  borderMode=cv2.BORDER_REPLICATE)
     image  = Image.fromarray(warped, mode="L")
 
-    if has_gate:
+    if gate_commitment:
         pt        = np.float32([[[cx, cy]]])
         pt_warped = cv2.perspectiveTransform(pt, M)
         cx        = float(pt_warped[0, 0, 0])
@@ -369,7 +369,7 @@ if __name__ == "__main__":
             img.save(os.path.join(tmpdir, fname))
             labels.append({
                 "image":    fname,
-                "has_gate": i % 2,
+                "gate_commitment": i % 2,
                 "heading":  round((i - 10) * 0.08, 3),
             })
 
@@ -387,7 +387,7 @@ if __name__ == "__main__":
             if not (-1.0 <= lbl[1].item() <= 1.0):
                 errors.append(f"sample {i}: heading out of range {lbl[1].item():.3f}")
             if lbl[0].item() not in (0.0, 1.0):
-                errors.append(f"sample {i}: has_gate not 0/1: {lbl[0].item()}")
+                errors.append(f"sample {i}: gate_commitment not 0/1: {lbl[0].item()}")
 
         if errors:
             print("ERRORS:")
@@ -399,5 +399,5 @@ if __name__ == "__main__":
         print(f"Val   samples : {len(val_ds)}")
         print(f"Image shape   : {tuple(img_t.shape)}  (want [1, {CNN_INPUT_H}, {CNN_INPUT_W}])")
         print(f"Label shape   : {tuple(lbl.shape)}    (want [2])")
-        print(f"label[0]=has_gate, label[1]=heading — both in range")
+        print(f"label[0]=gate_commitment, label[1]=heading — both in range")
         print("dataset.py OK")

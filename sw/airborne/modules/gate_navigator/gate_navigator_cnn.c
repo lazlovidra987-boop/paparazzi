@@ -115,7 +115,7 @@ void gate_navigator_cnn_periodic(void)
     guidance_v_set_vz(0.0f);
     /* ── Read CNN output ────────────────────────────────────────────── */
     float   heading    = gate_cnn_result.heading;     /* [-1, 1] */
-    float   confidence = gate_cnn_result.confidence;  /* [0,  1] */
+    float   confidence = gate_cnn_result.gate_measure;  /* [0,  1] */
     uint8_t gate_found = (confidence >= cnn_nav_conf_thresh) ? 1 : 0;
 
     state_ticks++;

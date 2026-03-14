@@ -1,0 +1,2502 @@
+[
+  {
+    "image": "101261812.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "101395155.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "101828478.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "102128474.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "102395140.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "102528470.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "102961824.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "103095136.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "103228480.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "103728463.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "104028474.jpg",
+    "gate_commitment": 1,
+    "heading": -0.026923
+  },
+  {
+    "image": "104428471.jpg",
+    "gate_commitment": 0,
+    "heading": -0.026923
+  },
+  {
+    "image": "104828455.jpg",
+    "gate_commitment": 0,
+    "heading": -0.003846
+  },
+  {
+    "image": "104961803.jpg",
+    "gate_commitment": 0,
+    "heading": -0.007692
+  },
+  {
+    "image": "105128451.jpg",
+    "gate_commitment": 0,
+    "heading": -0.007692
+  },
+  {
+    "image": "105561779.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "105728453.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "105995111.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "106295122.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "106595117.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "107128439.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "107295125.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "107428436.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "108195092.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "108861756.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "109028427.jpg",
+    "gate_commitment": 0,
+    "heading": 0.838462
+  },
+  {
+    "image": "109195148.jpg",
+    "gate_commitment": 0,
+    "heading": 0.603846
+  },
+  {
+    "image": "109628418.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "110061743.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "110328406.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "111361743.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "111495063.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "111761735.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "112528421.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "112828388.jpg",
+    "gate_commitment": 0,
+    "heading": 0.05
+  },
+  {
+    "image": "113295065.jpg",
+    "gate_commitment": 0,
+    "heading": 0.05
+  },
+  {
+    "image": "113761713.jpg",
+    "gate_commitment": 0,
+    "heading": 0.05
+  },
+  {
+    "image": "114028435.jpg",
+    "gate_commitment": 0,
+    "heading": 0.730769
+  },
+  {
+    "image": "114428376.jpg",
+    "gate_commitment": 0,
+    "heading": 0.003846
+  },
+  {
+    "image": "114861706.jpg",
+    "gate_commitment": 0,
+    "heading": 0.003846
+  },
+  {
+    "image": "115028372.jpg",
+    "gate_commitment": 0,
+    "heading": 0.830769
+  },
+  {
+    "image": "115195148.jpg",
+    "gate_commitment": 0,
+    "heading": 0.034615
+  },
+  {
+    "image": "115328380.jpg",
+    "gate_commitment": 0,
+    "heading": 0.923077
+  },
+  {
+    "image": "115761727.jpg",
+    "gate_commitment": 0,
+    "heading": 0.85
+  },
+  {
+    "image": "116928365.jpg",
+    "gate_commitment": 0,
+    "heading": 0.85
+  },
+  {
+    "image": "117395020.jpg",
+    "gate_commitment": 0,
+    "heading": 0.85
+  },
+  {
+    "image": "118428356.jpg",
+    "gate_commitment": 0,
+    "heading": 0.457692
+  },
+  {
+    "image": "118595035.jpg",
+    "gate_commitment": 0,
+    "heading": 0.388462
+  },
+  {
+    "image": "118928348.jpg",
+    "gate_commitment": 0,
+    "heading": 0.234615
+  },
+  {
+    "image": "119728351.jpg",
+    "gate_commitment": 0,
+    "heading": 0.007692
+  },
+  {
+    "image": "120794987.jpg",
+    "gate_commitment": 0,
+    "heading": 0.003846
+  },
+  {
+    "image": "120961663.jpg",
+    "gate_commitment": 0,
+    "heading": -0.007692
+  },
+  {
+    "image": "121128343.jpg",
+    "gate_commitment": 0,
+    "heading": -0.019231
+  },
+  {
+    "image": "121428320.jpg",
+    "gate_commitment": 0,
+    "heading": -0.053846
+  },
+  {
+    "image": "121595026.jpg",
+    "gate_commitment": 0,
+    "heading": -0.042308
+  },
+  {
+    "image": "121728337.jpg",
+    "gate_commitment": 0,
+    "heading": -0.053846
+  },
+  {
+    "image": "122828362.jpg",
+    "gate_commitment": 0,
+    "heading": -0.061538
+  },
+  {
+    "image": "122994979.jpg",
+    "gate_commitment": 0,
+    "heading": -0.046154
+  },
+  {
+    "image": "123294974.jpg",
+    "gate_commitment": 0,
+    "heading": -0.026923
+  },
+  {
+    "image": "123761637.jpg",
+    "gate_commitment": 0,
+    "heading": 0.315385
+  },
+  {
+    "image": "123928309.jpg",
+    "gate_commitment": 0,
+    "heading": 0.315385
+  },
+  {
+    "image": "124294964.jpg",
+    "gate_commitment": 0,
+    "heading": 0.315385
+  },
+  {
+    "image": "124661639.jpg",
+    "gate_commitment": 1,
+    "heading": 0.157692
+  },
+  {
+    "image": "125428287.jpg",
+    "gate_commitment": 1,
+    "heading": 0.161538
+  },
+  {
+    "image": "125894951.jpg",
+    "gate_commitment": 1,
+    "heading": 0.123077
+  },
+  {
+    "image": "126828306.jpg",
+    "gate_commitment": 0,
+    "heading": 0.057692
+  },
+  {
+    "image": "127294936.jpg",
+    "gate_commitment": 0,
+    "heading": 0.088462
+  },
+  {
+    "image": "127761606.jpg",
+    "gate_commitment": 1,
+    "heading": 0.088462
+  },
+  {
+    "image": "128061614.jpg",
+    "gate_commitment": 0,
+    "heading": 0.088462
+  },
+  {
+    "image": "128228301.jpg",
+    "gate_commitment": 1,
+    "heading": 0.092308
+  },
+  {
+    "image": "128694955.jpg",
+    "gate_commitment": 0,
+    "heading": 0.103846
+  },
+  {
+    "image": "128961618.jpg",
+    "gate_commitment": 0,
+    "heading": 0.080769
+  },
+  {
+    "image": "129128265.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "129428255.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "129561593.jpg",
+    "gate_commitment": 0,
+    "heading": 0.076923
+  },
+  {
+    "image": "129694926.jpg",
+    "gate_commitment": 0,
+    "heading": 0.084615
+  },
+  {
+    "image": "130128255.jpg",
+    "gate_commitment": 0,
+    "heading": 0.080769
+  },
+  {
+    "image": "130294922.jpg",
+    "gate_commitment": 0,
+    "heading": 0.080769
+  },
+  {
+    "image": "130628248.jpg",
+    "gate_commitment": 0,
+    "heading": 0.05
+  },
+  {
+    "image": "131228253.jpg",
+    "gate_commitment": 0,
+    "heading": 0.05
+  },
+  {
+    "image": "131694934.jpg",
+    "gate_commitment": 0,
+    "heading": 0.05
+  },
+  {
+    "image": "132128239.jpg",
+    "gate_commitment": 0,
+    "heading": -0.061538
+  },
+  {
+    "image": "132428232.jpg",
+    "gate_commitment": 0,
+    "heading": 0.003846
+  },
+  {
+    "image": "133528223.jpg",
+    "gate_commitment": 0,
+    "heading": 0.003846
+  },
+  {
+    "image": "133694891.jpg",
+    "gate_commitment": 0,
+    "heading": 0.073077
+  },
+  {
+    "image": "133828229.jpg",
+    "gate_commitment": 0,
+    "heading": 0.073077
+  },
+  {
+    "image": "134461551.jpg",
+    "gate_commitment": 0,
+    "heading": 0.169231
+  },
+  {
+    "image": "134628249.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "134928211.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "136128195.jpg",
+    "gate_commitment": 0,
+    "heading": -0.115385
+  },
+  {
+    "image": "136628218.jpg",
+    "gate_commitment": 0,
+    "heading": -0.234615
+  },
+  {
+    "image": "136794868.jpg",
+    "gate_commitment": 0,
+    "heading": 0.930769
+  },
+  {
+    "image": "137094863.jpg",
+    "gate_commitment": 0,
+    "heading": 0.961538
+  },
+  {
+    "image": "137261528.jpg",
+    "gate_commitment": 0,
+    "heading": 0.961538
+  },
+  {
+    "image": "137394866.jpg",
+    "gate_commitment": 0,
+    "heading": 0.961538
+  },
+  {
+    "image": "137528193.jpg",
+    "gate_commitment": 0,
+    "heading": 0.961538
+  },
+  {
+    "image": "138661533.jpg",
+    "gate_commitment": 0,
+    "heading": 0.573077
+  },
+  {
+    "image": "138828186.jpg",
+    "gate_commitment": 0,
+    "heading": 0.630769
+  },
+  {
+    "image": "139294848.jpg",
+    "gate_commitment": 0,
+    "heading": 0.503846
+  },
+  {
+    "image": "140094889.jpg",
+    "gate_commitment": 0,
+    "heading": 0.419231
+  },
+  {
+    "image": "140228172.jpg",
+    "gate_commitment": 0,
+    "heading": 0.330769
+  },
+  {
+    "image": "140828179.jpg",
+    "gate_commitment": 0,
+    "heading": 0.553846
+  },
+  {
+    "image": "141128166.jpg",
+    "gate_commitment": 0,
+    "heading": 0.55
+  },
+  {
+    "image": "141561492.jpg",
+    "gate_commitment": 0,
+    "heading": 0.526923
+  },
+  {
+    "image": "141728167.jpg",
+    "gate_commitment": 0,
+    "heading": 0.523077
+  },
+  {
+    "image": "141861541.jpg",
+    "gate_commitment": 0,
+    "heading": 0.503846
+  },
+  {
+    "image": "142028156.jpg",
+    "gate_commitment": 0,
+    "heading": 0.480769
+  },
+  {
+    "image": "142761484.jpg",
+    "gate_commitment": 0,
+    "heading": 0.415385
+  },
+  {
+    "image": "143594803.jpg",
+    "gate_commitment": 0,
+    "heading": 0.507692
+  },
+  {
+    "image": "143728136.jpg",
+    "gate_commitment": 0,
+    "heading": 0.473077
+  },
+  {
+    "image": "143894812.jpg",
+    "gate_commitment": 0,
+    "heading": 0.45
+  },
+  {
+    "image": "144194802.jpg",
+    "gate_commitment": 0,
+    "heading": 0.45
+  },
+  {
+    "image": "144628140.jpg",
+    "gate_commitment": 0,
+    "heading": 0.45
+  },
+  {
+    "image": "145428133.jpg",
+    "gate_commitment": 0,
+    "heading": 0.45
+  },
+  {
+    "image": "145728139.jpg",
+    "gate_commitment": 0,
+    "heading": 0.473077
+  },
+  {
+    "image": "145894793.jpg",
+    "gate_commitment": 0,
+    "heading": 0.515385
+  },
+  {
+    "image": "146028140.jpg",
+    "gate_commitment": 0,
+    "heading": 0.480769
+  },
+  {
+    "image": "146461458.jpg",
+    "gate_commitment": 0,
+    "heading": 0.461538
+  },
+  {
+    "image": "146594902.jpg",
+    "gate_commitment": 0,
+    "heading": 0.461538
+  },
+  {
+    "image": "146894787.jpg",
+    "gate_commitment": 0,
+    "heading": 0.461538
+  },
+  {
+    "image": "148828116.jpg",
+    "gate_commitment": 0,
+    "heading": 0.526923
+  },
+  {
+    "image": "149128100.jpg",
+    "gate_commitment": 0,
+    "heading": 0.526923
+  },
+  {
+    "image": "149261434.jpg",
+    "gate_commitment": 0,
+    "heading": 0.592308
+  },
+  {
+    "image": "149428127.jpg",
+    "gate_commitment": 0,
+    "heading": 0.592308
+  },
+  {
+    "image": "149561434.jpg",
+    "gate_commitment": 0,
+    "heading": 0.592308
+  },
+  {
+    "image": "149994805.jpg",
+    "gate_commitment": 0,
+    "heading": 0.607692
+  },
+  {
+    "image": "150128095.jpg",
+    "gate_commitment": 0,
+    "heading": 0.580769
+  },
+  {
+    "image": "150994799.jpg",
+    "gate_commitment": 0,
+    "heading": 0.580769
+  },
+  {
+    "image": "151894792.jpg",
+    "gate_commitment": 0,
+    "heading": 0.626923
+  },
+  {
+    "image": "152028114.jpg",
+    "gate_commitment": 0,
+    "heading": 0.734615
+  },
+  {
+    "image": "152461407.jpg",
+    "gate_commitment": 0,
+    "heading": 0.661538
+  },
+  {
+    "image": "152761444.jpg",
+    "gate_commitment": 0,
+    "heading": 0.592308
+  },
+  {
+    "image": "153028105.jpg",
+    "gate_commitment": 0,
+    "heading": 0.469231
+  },
+  {
+    "image": "153194735.jpg",
+    "gate_commitment": 0,
+    "heading": 0.392308
+  },
+  {
+    "image": "153628094.jpg",
+    "gate_commitment": 0,
+    "heading": 0.234615
+  },
+  {
+    "image": "153761409.jpg",
+    "gate_commitment": 0,
+    "heading": 0.203846
+  },
+  {
+    "image": "154194729.jpg",
+    "gate_commitment": 0,
+    "heading": 0.126923
+  },
+  {
+    "image": "154628089.jpg",
+    "gate_commitment": 0,
+    "heading": 0.042308
+  },
+  {
+    "image": "155094723.jpg",
+    "gate_commitment": 0,
+    "heading": 0.042308
+  },
+  {
+    "image": "155228055.jpg",
+    "gate_commitment": 0,
+    "heading": 0.084615
+  },
+  {
+    "image": "155394760.jpg",
+    "gate_commitment": 0,
+    "heading": 0.084615
+  },
+  {
+    "image": "155661380.jpg",
+    "gate_commitment": 0,
+    "heading": 0.084615
+  },
+  {
+    "image": "156261386.jpg",
+    "gate_commitment": 0,
+    "heading": 0.107692
+  },
+  {
+    "image": "156428044.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "156861376.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "157028061.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "157161373.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "157594703.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "157728037.jpg",
+    "gate_commitment": 1,
+    "heading": 0.065385
+  },
+  {
+    "image": "157861366.jpg",
+    "gate_commitment": 1,
+    "heading": 0.065385
+  },
+  {
+    "image": "158294713.jpg",
+    "gate_commitment": 1,
+    "heading": 0.065385
+  },
+  {
+    "image": "158828090.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "160428354.jpg",
+    "gate_commitment": 1,
+    "heading": 0.065385
+  },
+  {
+    "image": "160561374.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "161294680.jpg",
+    "gate_commitment": 1,
+    "heading": 0.030769
+  },
+  {
+    "image": "161594671.jpg",
+    "gate_commitment": 1,
+    "heading": 0.030769
+  },
+  {
+    "image": "162028009.jpg",
+    "gate_commitment": 1,
+    "heading": -0.234615
+  },
+  {
+    "image": "162294668.jpg",
+    "gate_commitment": 1,
+    "heading": -0.2
+  },
+  {
+    "image": "162594668.jpg",
+    "gate_commitment": 1,
+    "heading": -0.238462
+  },
+  {
+    "image": "163061337.jpg",
+    "gate_commitment": 1,
+    "heading": -0.15
+  },
+  {
+    "image": "163327992.jpg",
+    "gate_commitment": 1,
+    "heading": -0.615385
+  },
+  {
+    "image": "163761330.jpg",
+    "gate_commitment": 1,
+    "heading": -0.130769
+  },
+  {
+    "image": "163927993.jpg",
+    "gate_commitment": 1,
+    "heading": -0.153846
+  },
+  {
+    "image": "164061380.jpg",
+    "gate_commitment": 0,
+    "heading": -0.161538
+  },
+  {
+    "image": "164194649.jpg",
+    "gate_commitment": 1,
+    "heading": -0.165385
+  },
+  {
+    "image": "164627992.jpg",
+    "gate_commitment": 1,
+    "heading": -0.115385
+  },
+  {
+    "image": "164761315.jpg",
+    "gate_commitment": 0,
+    "heading": -0.088462
+  },
+  {
+    "image": "164894643.jpg",
+    "gate_commitment": 0,
+    "heading": -0.088462
+  },
+  {
+    "image": "165194643.jpg",
+    "gate_commitment": 0,
+    "heading": -0.026923
+  },
+  {
+    "image": "166628018.jpg",
+    "gate_commitment": 0,
+    "heading": -0.084615
+  },
+  {
+    "image": "167061295.jpg",
+    "gate_commitment": 0,
+    "heading": 0.119231
+  },
+  {
+    "image": "167327964.jpg",
+    "gate_commitment": 0,
+    "heading": 0.142308
+  },
+  {
+    "image": "167461287.jpg",
+    "gate_commitment": 0,
+    "heading": 0.038462
+  },
+  {
+    "image": "167761301.jpg",
+    "gate_commitment": 0,
+    "heading": -0.065385
+  },
+  {
+    "image": "167894621.jpg",
+    "gate_commitment": 0,
+    "heading": -0.092308
+  },
+  {
+    "image": "168027995.jpg",
+    "gate_commitment": 1,
+    "heading": 0.0
+  },
+  {
+    "image": "168294625.jpg",
+    "gate_commitment": 0,
+    "heading": -0.011538
+  },
+  {
+    "image": "168727963.jpg",
+    "gate_commitment": 0,
+    "heading": -0.092308
+  },
+  {
+    "image": "169161313.jpg",
+    "gate_commitment": 0,
+    "heading": 0.246154
+  },
+  {
+    "image": "169294625.jpg",
+    "gate_commitment": 0,
+    "heading": 0.219231
+  },
+  {
+    "image": "169427953.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "169561308.jpg",
+    "gate_commitment": 0,
+    "heading": -0.076923
+  },
+  {
+    "image": "169694670.jpg",
+    "gate_commitment": 0,
+    "heading": 0.307692
+  },
+  {
+    "image": "169827947.jpg",
+    "gate_commitment": 0,
+    "heading": 0.126923
+  },
+  {
+    "image": "170694598.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "170827930.jpg",
+    "gate_commitment": 0,
+    "heading": -0.038462
+  },
+  {
+    "image": "171927952.jpg",
+    "gate_commitment": 0,
+    "heading": -0.061538
+  },
+  {
+    "image": "172094589.jpg",
+    "gate_commitment": 0,
+    "heading": 0.0
+  },
+  {
+    "image": "172494579.jpg",
+    "gate_commitment": 0,
+    "heading": -0.323077
+  },
+  {
+    "image": "172661259.jpg",
+    "gate_commitment": 0,
+    "heading": -0.45
+  },
+  {
+    "image": "173227910.jpg",
+    "gate_commitment": 0,
+    "heading": 0.769231
+  },
+  {
+    "image": "173661265.jpg",
+    "gate_commitment": 0,
+    "heading": 0.646154
+  },
+  {
+    "image": "173961236.jpg",
+    "gate_commitment": 0,
+    "heading": 0.519231
+  },
+  {
+    "image": "174527906.jpg",
+    "gate_commitment": 0,
+    "heading": 0.269231
+  },
+  {
+    "image": "175428044.jpg",
+    "gate_commitment": 0,
+    "heading": -0.015385
+  },
+  {
+    "image": "175727901.jpg",
+    "gate_commitment": 0,
+    "heading": -0.030769
+  },
+  {
+    "image": "175894559.jpg",
+    "gate_commitment": 0,
+    "heading": -0.061538
+  },
+  {
+    "image": "176027892.jpg",
+    "gate_commitment": 0,
+    "heading": -0.115385
+  },
+  {
+    "image": "176327883.jpg",
+    "gate_commitment": 0,
+    "heading": -0.1
+  },
+  {
+    "image": "176594596.jpg",
+    "gate_commitment": 0,
+    "heading": -0.107692
+  },
+  {
+    "image": "177761209.jpg",
+    "gate_commitment": 0,
+    "heading": -0.107692
+  },
+  {
+    "image": "177927867.jpg",
+    "gate_commitment": 0,
+    "heading": -0.073077
+  },
+  {
+    "image": "178094563.jpg",
+    "gate_commitment": 0,
+    "heading": -0.103846
+  },
+  {
+    "image": "179394537.jpg",
+    "gate_commitment": 0,
+    "heading": -0.103846
+  },
+  {
+    "image": "180894519.jpg",
+    "gate_commitment": 0,
+    "heading": -0.338462
+  },
+  {
+    "image": "181227853.jpg",
+    "gate_commitment": 0,
+    "heading": -0.296154
+  },
+  {
+    "image": "181361182.jpg",
+    "gate_commitment": 0,
+    "heading": -0.323077
+  },
+  {
+    "image": "181527843.jpg",
+    "gate_commitment": 0,
+    "heading": -0.323077
+  },
+  {
+    "image": "181827840.jpg",
+    "gate_commitment": 0,
+    "heading": -0.311538
+  },
+  {
+    "image": "182694499.jpg",
+    "gate_commitment": 0,
+    "heading": -0.3
+  },
+  {
+    "image": "182827834.jpg",
+    "gate_commitment": 0,
+    "heading": -0.3
+  },
+  {
+    "image": "182961166.jpg",
+    "gate_commitment": 0,
+    "heading": -0.3
+  },
+  {
+    "image": "183861160.jpg",
+    "gate_commitment": 0,
+    "heading": 0.119231
+  },
+  {
+    "image": "184894486.jpg",
+    "gate_commitment": 0,
+    "heading": 0.403846
+  },
+  {
+    "image": "185761144.jpg",
+    "gate_commitment": 0,
+    "heading": -0.361538
+  },
+  {
+    "image": "186194483.jpg",
+    "gate_commitment": 0,
+    "heading": -0.257692
+  },
+  {
+    "image": "186494476.jpg",
+    "gate_commitment": 0,
+    "heading": -0.242308
+  },
+  {
+    "image": "186661136.jpg",
+    "gate_commitment": 0,
+    "heading": -0.246154
+  },
+  {
+    "image": "186961158.jpg",
+    "gate_commitment": 0,
+    "heading": -0.207692
+  },
+  {
+    "image": "187561144.jpg",
+    "gate_commitment": 0,
+    "heading": -0.05
+  },
+  {
+    "image": "187861135.jpg",
+    "gate_commitment": 0,
+    "heading": -0.034615
+  },
+  {
+    "image": "188161160.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "188327813.jpg",
+    "gate_commitment": 0,
+    "heading": -0.103846
+  },
+  {
+    "image": "188627788.jpg",
+    "gate_commitment": 0,
+    "heading": 0.234615
+  },
+  {
+    "image": "188927792.jpg",
+    "gate_commitment": 0,
+    "heading": -0.176923
+  },
+  {
+    "image": "189394450.jpg",
+    "gate_commitment": 0,
+    "heading": -0.569231
+  },
+  {
+    "image": "190327774.jpg",
+    "gate_commitment": 0,
+    "heading": -0.273077
+  },
+  {
+    "image": "190627760.jpg",
+    "gate_commitment": 0,
+    "heading": 0.423077
+  },
+  {
+    "image": "191227787.jpg",
+    "gate_commitment": 0,
+    "heading": 0.607692
+  },
+  {
+    "image": "191394433.jpg",
+    "gate_commitment": 0,
+    "heading": 0.615385
+  },
+  {
+    "image": "191561105.jpg",
+    "gate_commitment": 0,
+    "heading": 0.623077
+  },
+  {
+    "image": "191861096.jpg",
+    "gate_commitment": 0,
+    "heading": 0.815385
+  },
+  {
+    "image": "191994426.jpg",
+    "gate_commitment": 0,
+    "heading": 0.742308
+  },
+  {
+    "image": "192194451.jpg",
+    "gate_commitment": 0,
+    "heading": 0.742308
+  },
+  {
+    "image": "192327788.jpg",
+    "gate_commitment": 0,
+    "heading": 0.742308
+  },
+  {
+    "image": "193861081.jpg",
+    "gate_commitment": 0,
+    "heading": 0.1
+  },
+  {
+    "image": "194027763.jpg",
+    "gate_commitment": 0,
+    "heading": -0.369231
+  },
+  {
+    "image": "194294415.jpg",
+    "gate_commitment": 0,
+    "heading": 0.15
+  },
+  {
+    "image": "194894406.jpg",
+    "gate_commitment": 0,
+    "heading": 0.65
+  },
+  {
+    "image": "195894411.jpg",
+    "gate_commitment": 0,
+    "heading": 0.165385
+  },
+  {
+    "image": "196061057.jpg",
+    "gate_commitment": 0,
+    "heading": 0.273077
+  },
+  {
+    "image": "196794389.jpg",
+    "gate_commitment": 0,
+    "heading": -0.492308
+  },
+  {
+    "image": "198861056.jpg",
+    "gate_commitment": 0,
+    "heading": -0.473077
+  },
+  {
+    "image": "199961052.jpg",
+    "gate_commitment": 0,
+    "heading": -0.476923
+  },
+  {
+    "image": "200261031.jpg",
+    "gate_commitment": 0,
+    "heading": -0.380769
+  },
+  {
+    "image": "200394364.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "200594385.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "201261038.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "201561022.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "201861024.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "202161023.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "202294343.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "202894347.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "203027673.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "203161007.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "205027657.jpg",
+    "gate_commitment": 0,
+    "heading": 0.015385
+  },
+  {
+    "image": "205194320.jpg",
+    "gate_commitment": 0,
+    "heading": -0.215385
+  },
+  {
+    "image": "205361017.jpg",
+    "gate_commitment": 0,
+    "heading": -0.215385
+  },
+  {
+    "image": "205494359.jpg",
+    "gate_commitment": 0,
+    "heading": 0.057692
+  },
+  {
+    "image": "205627657.jpg",
+    "gate_commitment": 0,
+    "heading": 0.053846
+  },
+  {
+    "image": "206327754.jpg",
+    "gate_commitment": 0,
+    "heading": 0.053846
+  },
+  {
+    "image": "206761351.jpg",
+    "gate_commitment": 0,
+    "heading": 0.042308
+  },
+  {
+    "image": "206894323.jpg",
+    "gate_commitment": 0,
+    "heading": 0.042308
+  },
+  {
+    "image": "207194318.jpg",
+    "gate_commitment": 0,
+    "heading": 0.042308
+  },
+  {
+    "image": "207327640.jpg",
+    "gate_commitment": 0,
+    "heading": 0.042308
+  },
+  {
+    "image": "208427647.jpg",
+    "gate_commitment": 0,
+    "heading": 0.038462
+  },
+  {
+    "image": "209760958.jpg",
+    "gate_commitment": 1,
+    "heading": -0.053846
+  },
+  {
+    "image": "209927620.jpg",
+    "gate_commitment": 0,
+    "heading": 0.023077
+  },
+  {
+    "image": "210694286.jpg",
+    "gate_commitment": 0,
+    "heading": 0.023077
+  },
+  {
+    "image": "210860957.jpg",
+    "gate_commitment": 1,
+    "heading": 0.023077
+  },
+  {
+    "image": "210994297.jpg",
+    "gate_commitment": 0,
+    "heading": 0.023077
+  },
+  {
+    "image": "211294271.jpg",
+    "gate_commitment": 0,
+    "heading": 0.023077
+  },
+  {
+    "image": "211460938.jpg",
+    "gate_commitment": 0,
+    "heading": 0.184615
+  },
+  {
+    "image": "211594280.jpg",
+    "gate_commitment": 0,
+    "heading": 0.273077
+  },
+  {
+    "image": "211760933.jpg",
+    "gate_commitment": 0,
+    "heading": 0.407692
+  },
+  {
+    "image": "213127625.jpg",
+    "gate_commitment": 0,
+    "heading": 0.523077
+  },
+  {
+    "image": "213260932.jpg",
+    "gate_commitment": 0,
+    "heading": 0.557692
+  },
+  {
+    "image": "213560924.jpg",
+    "gate_commitment": 0,
+    "heading": 0.542308
+  },
+  {
+    "image": "213694258.jpg",
+    "gate_commitment": 0,
+    "heading": 0.542308
+  },
+  {
+    "image": "213860925.jpg",
+    "gate_commitment": 0,
+    "heading": 0.419231
+  },
+  {
+    "image": "213994309.jpg",
+    "gate_commitment": 0,
+    "heading": 0.423077
+  },
+  {
+    "image": "214160923.jpg",
+    "gate_commitment": 0,
+    "heading": 0.423077
+  },
+  {
+    "image": "214594254.jpg",
+    "gate_commitment": 0,
+    "heading": 0.123077
+  },
+  {
+    "image": "214894249.jpg",
+    "gate_commitment": 0,
+    "heading": 0.084615
+  },
+  {
+    "image": "215194247.jpg",
+    "gate_commitment": 0,
+    "heading": 0.092308
+  },
+  {
+    "image": "215494246.jpg",
+    "gate_commitment": 0,
+    "heading": 0.092308
+  },
+  {
+    "image": "215660920.jpg",
+    "gate_commitment": 1,
+    "heading": 0.215385
+  },
+  {
+    "image": "216127608.jpg",
+    "gate_commitment": 0,
+    "heading": 0.2
+  },
+  {
+    "image": "216427572.jpg",
+    "gate_commitment": 0,
+    "heading": 0.157692
+  },
+  {
+    "image": "216727613.jpg",
+    "gate_commitment": 0,
+    "heading": 0.157692
+  },
+  {
+    "image": "216894234.jpg",
+    "gate_commitment": 0,
+    "heading": 0.1
+  },
+  {
+    "image": "217027584.jpg",
+    "gate_commitment": 0,
+    "heading": 0.107692
+  },
+  {
+    "image": "217194234.jpg",
+    "gate_commitment": 0,
+    "heading": 0.130769
+  },
+  {
+    "image": "217327560.jpg",
+    "gate_commitment": 0,
+    "heading": 0.138462
+  },
+  {
+    "image": "217494237.jpg",
+    "gate_commitment": 0,
+    "heading": 0.138462
+  },
+  {
+    "image": "217794223.jpg",
+    "gate_commitment": 0,
+    "heading": 0.138462
+  },
+  {
+    "image": "218560885.jpg",
+    "gate_commitment": 0,
+    "heading": 0.138462
+  },
+  {
+    "image": "219160955.jpg",
+    "gate_commitment": 0,
+    "heading": 0.138462
+  },
+  {
+    "image": "220194204.jpg",
+    "gate_commitment": 0,
+    "heading": 0.130769
+  },
+  {
+    "image": "220360898.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "220494205.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "221227532.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "221494197.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "221660860.jpg",
+    "gate_commitment": 0,
+    "heading": 0.092308
+  },
+  {
+    "image": "221960857.jpg",
+    "gate_commitment": 0,
+    "heading": 0.126923
+  },
+  {
+    "image": "222260856.jpg",
+    "gate_commitment": 0,
+    "heading": -0.815385
+  },
+  {
+    "image": "222427530.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "223027519.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "223294184.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "223594181.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "224160841.jpg",
+    "gate_commitment": 0,
+    "heading": 0.253846
+  },
+  {
+    "image": "224360935.jpg",
+    "gate_commitment": 0,
+    "heading": 0.030769
+  },
+  {
+    "image": "225227502.jpg",
+    "gate_commitment": 0,
+    "heading": 0.030769
+  },
+  {
+    "image": "225394190.jpg",
+    "gate_commitment": 0,
+    "heading": 0.030769
+  },
+  {
+    "image": "225827493.jpg",
+    "gate_commitment": 0,
+    "heading": 0.030769
+  },
+  {
+    "image": "226227505.jpg",
+    "gate_commitment": 0,
+    "heading": 0.030769
+  },
+  {
+    "image": "226394175.jpg",
+    "gate_commitment": 0,
+    "heading": 0.030769
+  },
+  {
+    "image": "226827485.jpg",
+    "gate_commitment": 0,
+    "heading": 0.592308
+  },
+  {
+    "image": "227127499.jpg",
+    "gate_commitment": 0,
+    "heading": 0.592308
+  },
+  {
+    "image": "227294145.jpg",
+    "gate_commitment": 0,
+    "heading": 0.626923
+  },
+  {
+    "image": "227594147.jpg",
+    "gate_commitment": 0,
+    "heading": 0.626923
+  },
+  {
+    "image": "227727482.jpg",
+    "gate_commitment": 0,
+    "heading": 0.796154
+  },
+  {
+    "image": "228027492.jpg",
+    "gate_commitment": 0,
+    "heading": 0.75
+  },
+  {
+    "image": "228327478.jpg",
+    "gate_commitment": 0,
+    "heading": -0.165385
+  },
+  {
+    "image": "229827744.jpg",
+    "gate_commitment": 0,
+    "heading": 0.107692
+  },
+  {
+    "image": "230194124.jpg",
+    "gate_commitment": 0,
+    "heading": 0.076923
+  },
+  {
+    "image": "230360794.jpg",
+    "gate_commitment": 0,
+    "heading": 0.080769
+  },
+  {
+    "image": "230660792.jpg",
+    "gate_commitment": 0,
+    "heading": 0.080769
+  },
+  {
+    "image": "231561113.jpg",
+    "gate_commitment": 0,
+    "heading": 0.080769
+  },
+  {
+    "image": "232627502.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "233560762.jpg",
+    "gate_commitment": 0,
+    "heading": 0.234615
+  },
+  {
+    "image": "233727431.jpg",
+    "gate_commitment": 0,
+    "heading": 0.230769
+  },
+  {
+    "image": "234327430.jpg",
+    "gate_commitment": 0,
+    "heading": 0.4
+  },
+  {
+    "image": "234627424.jpg",
+    "gate_commitment": 0,
+    "heading": 0.861538
+  },
+  {
+    "image": "234960764.jpg",
+    "gate_commitment": 0,
+    "heading": 0.834615
+  },
+  {
+    "image": "235960749.jpg",
+    "gate_commitment": 0,
+    "heading": -0.523077
+  },
+  {
+    "image": "236860786.jpg",
+    "gate_commitment": 0,
+    "heading": 0.011538
+  },
+  {
+    "image": "237160775.jpg",
+    "gate_commitment": 0,
+    "heading": 0.223077
+  },
+  {
+    "image": "237460735.jpg",
+    "gate_commitment": 0,
+    "heading": 0.488462
+  },
+  {
+    "image": "237627403.jpg",
+    "gate_commitment": 0,
+    "heading": 0.484615
+  },
+  {
+    "image": "237894069.jpg",
+    "gate_commitment": 0,
+    "heading": 0.484615
+  },
+  {
+    "image": "238660736.jpg",
+    "gate_commitment": 0,
+    "heading": 0.019231
+  },
+  {
+    "image": "238794093.jpg",
+    "gate_commitment": 0,
+    "heading": 0.073077
+  },
+  {
+    "image": "239494061.jpg",
+    "gate_commitment": 0,
+    "heading": 0.161538
+  },
+  {
+    "image": "240094044.jpg",
+    "gate_commitment": 0,
+    "heading": 0.15
+  },
+  {
+    "image": "241094039.jpg",
+    "gate_commitment": 0,
+    "heading": 0.380769
+  },
+  {
+    "image": "241227374.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "241694037.jpg",
+    "gate_commitment": 0,
+    "heading": 0.046154
+  },
+  {
+    "image": "242060757.jpg",
+    "gate_commitment": 0,
+    "heading": -0.338462
+  },
+  {
+    "image": "242660700.jpg",
+    "gate_commitment": 0,
+    "heading": -0.342308
+  },
+  {
+    "image": "243127357.jpg",
+    "gate_commitment": 0,
+    "heading": -0.65
+  },
+  {
+    "image": "243294058.jpg",
+    "gate_commitment": 0,
+    "heading": -0.346154
+  },
+  {
+    "image": "244627332.jpg",
+    "gate_commitment": 0,
+    "heading": 0.496154
+  },
+  {
+    "image": "244894011.jpg",
+    "gate_commitment": 0,
+    "heading": 0.407692
+  },
+  {
+    "image": "245227338.jpg",
+    "gate_commitment": 0,
+    "heading": -0.419231
+  },
+  {
+    "image": "246760658.jpg",
+    "gate_commitment": 0,
+    "heading": 0.511538
+  },
+  {
+    "image": "246893994.jpg",
+    "gate_commitment": 0,
+    "heading": 0.515385
+  },
+  {
+    "image": "247227326.jpg",
+    "gate_commitment": 0,
+    "heading": 0.276923
+  },
+  {
+    "image": "247527345.jpg",
+    "gate_commitment": 0,
+    "heading": 0.45
+  },
+  {
+    "image": "248360648.jpg",
+    "gate_commitment": 0,
+    "heading": 0.003846
+  },
+  {
+    "image": "248493995.jpg",
+    "gate_commitment": 0,
+    "heading": -0.076923
+  },
+  {
+    "image": "250327299.jpg",
+    "gate_commitment": 0,
+    "heading": 0.461538
+  },
+  {
+    "image": "250760625.jpg",
+    "gate_commitment": 0,
+    "heading": 0.238462
+  },
+  {
+    "image": "250927302.jpg",
+    "gate_commitment": 0,
+    "heading": 0.05
+  },
+  {
+    "image": "251227304.jpg",
+    "gate_commitment": 0,
+    "heading": 0.061538
+  },
+  {
+    "image": "251860651.jpg",
+    "gate_commitment": 0,
+    "heading": 0.061538
+  },
+  {
+    "image": "252460619.jpg",
+    "gate_commitment": 0,
+    "heading": 0.107692
+  },
+  {
+    "image": "252893942.jpg",
+    "gate_commitment": 0,
+    "heading": 0.107692
+  },
+  {
+    "image": "253060610.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "253693993.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "253827271.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "254027313.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "254593931.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "254760612.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "255027264.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "255493924.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "255793920.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "255927255.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "256527255.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "256960600.jpg",
+    "gate_commitment": 0,
+    "heading": 0.226923
+  },
+  {
+    "image": "257093939.jpg",
+    "gate_commitment": 0,
+    "heading": 0.0
+  },
+  {
+    "image": "257894124.jpg",
+    "gate_commitment": 0,
+    "heading": 0.003846
+  },
+  {
+    "image": "258560566.jpg",
+    "gate_commitment": 0,
+    "heading": 0.05
+  },
+  {
+    "image": "258693906.jpg",
+    "gate_commitment": 0,
+    "heading": 0.0
+  },
+  {
+    "image": "258860564.jpg",
+    "gate_commitment": 0,
+    "heading": 0.0
+  },
+  {
+    "image": "259193898.jpg",
+    "gate_commitment": 0,
+    "heading": 0.0
+  },
+  {
+    "image": "259360853.jpg",
+    "gate_commitment": 0,
+    "heading": 0.0
+  },
+  {
+    "image": "259660568.jpg",
+    "gate_commitment": 0,
+    "heading": 0.0
+  },
+  {
+    "image": "259793888.jpg",
+    "gate_commitment": 0,
+    "heading": 0.0
+  },
+  {
+    "image": "260127503.jpg",
+    "gate_commitment": 0,
+    "heading": 0.596154
+  },
+  {
+    "image": "260360575.jpg",
+    "gate_commitment": 0,
+    "heading": 0.615385
+  },
+  {
+    "image": "260493894.jpg",
+    "gate_commitment": 0,
+    "heading": 0.615385
+  },
+  {
+    "image": "260660551.jpg",
+    "gate_commitment": 0,
+    "heading": 0.596154
+  },
+  {
+    "image": "260793897.jpg",
+    "gate_commitment": 0,
+    "heading": 0.596154
+  },
+  {
+    "image": "260960552.jpg",
+    "gate_commitment": 0,
+    "heading": 0.561538
+  },
+  {
+    "image": "261093894.jpg",
+    "gate_commitment": 0,
+    "heading": 0.530769
+  },
+  {
+    "image": "261227266.jpg",
+    "gate_commitment": 0,
+    "heading": 0.307692
+  },
+  {
+    "image": "261527215.jpg",
+    "gate_commitment": 0,
+    "heading": 0.323077
+  },
+  {
+    "image": "261827232.jpg",
+    "gate_commitment": 0,
+    "heading": 0.303846
+  },
+  {
+    "image": "262693876.jpg",
+    "gate_commitment": 0,
+    "heading": 0.234615
+  },
+  {
+    "image": "263127196.jpg",
+    "gate_commitment": 0,
+    "heading": 0.211538
+  },
+  {
+    "image": "263293863.jpg",
+    "gate_commitment": 0,
+    "heading": 0.065385
+  },
+  {
+    "image": "263460550.jpg",
+    "gate_commitment": 0,
+    "heading": 0.011538
+  },
+  {
+    "image": "264027201.jpg",
+    "gate_commitment": 0,
+    "heading": -0.465385
+  },
+  {
+    "image": "264193860.jpg",
+    "gate_commitment": 0,
+    "heading": -0.465385
+  },
+  {
+    "image": "265660511.jpg",
+    "gate_commitment": 0,
+    "heading": 0.292308
+  },
+  {
+    "image": "266327198.jpg",
+    "gate_commitment": 0,
+    "heading": 0.211538
+  },
+  {
+    "image": "268193826.jpg",
+    "gate_commitment": 0,
+    "heading": 0.276923
+  },
+  {
+    "image": "268327197.jpg",
+    "gate_commitment": 0,
+    "heading": 0.273077
+  },
+  {
+    "image": "269260486.jpg",
+    "gate_commitment": 0,
+    "heading": 0.323077
+  },
+  {
+    "image": "269560486.jpg",
+    "gate_commitment": 0,
+    "heading": 0.303846
+  },
+  {
+    "image": "270293810.jpg",
+    "gate_commitment": 0,
+    "heading": 0.419231
+  },
+  {
+    "image": "270460485.jpg",
+    "gate_commitment": 0,
+    "heading": 0.415385
+  },
+  {
+    "image": "271127494.jpg",
+    "gate_commitment": 0,
+    "heading": 0.473077
+  },
+  {
+    "image": "271960471.jpg",
+    "gate_commitment": 0,
+    "heading": 0.473077
+  },
+  {
+    "image": "272693787.jpg",
+    "gate_commitment": 0,
+    "heading": 0.288462
+  },
+  {
+    "image": "272860464.jpg",
+    "gate_commitment": 0,
+    "heading": 0.219231
+  },
+  {
+    "image": "272993790.jpg",
+    "gate_commitment": 0,
+    "heading": 0.219231
+  },
+  {
+    "image": "273160453.jpg",
+    "gate_commitment": 0,
+    "heading": 0.130769
+  },
+  {
+    "image": "273993793.jpg",
+    "gate_commitment": 0,
+    "heading": 0.069231
+  },
+  {
+    "image": "274293784.jpg",
+    "gate_commitment": 0,
+    "heading": 0.1
+  },
+  {
+    "image": "274427111.jpg",
+    "gate_commitment": 0,
+    "heading": 0.1
+  },
+  {
+    "image": "274860439.jpg",
+    "gate_commitment": 0,
+    "heading": 0.073077
+  },
+  {
+    "image": "275127118.jpg",
+    "gate_commitment": 0,
+    "heading": 0.007692
+  },
+  {
+    "image": "275293774.jpg",
+    "gate_commitment": 0,
+    "heading": -0.030769
+  },
+  {
+    "image": "275560433.jpg",
+    "gate_commitment": 0,
+    "heading": 0.019231
+  },
+  {
+    "image": "276460438.jpg",
+    "gate_commitment": 1,
+    "heading": 0.019231
+  },
+  {
+    "image": "277293753.jpg",
+    "gate_commitment": 0,
+    "heading": -0.403846
+  },
+  {
+    "image": "277760409.jpg",
+    "gate_commitment": 0,
+    "heading": -0.688462
+  },
+  {
+    "image": "278060412.jpg",
+    "gate_commitment": 0,
+    "heading": -0.688462
+  },
+  {
+    "image": "278193749.jpg",
+    "gate_commitment": 0,
+    "heading": -0.523077
+  },
+  {
+    "image": "279060402.jpg",
+    "gate_commitment": 0,
+    "heading": 0.169231
+  },
+  {
+    "image": "279627108.jpg",
+    "gate_commitment": 0,
+    "heading": 0.238462
+  },
+  {
+    "image": "280627102.jpg",
+    "gate_commitment": 0,
+    "heading": 0.269231
+  },
+  {
+    "image": "280927060.jpg",
+    "gate_commitment": 0,
+    "heading": 0.384615
+  },
+  {
+    "image": "281060395.jpg",
+    "gate_commitment": 0,
+    "heading": 0.388462
+  },
+  {
+    "image": "281193725.jpg",
+    "gate_commitment": 0,
+    "heading": 0.388462
+  },
+  {
+    "image": "281327057.jpg",
+    "gate_commitment": 0,
+    "heading": 0.376923
+  },
+  {
+    "image": "281460385.jpg",
+    "gate_commitment": 0,
+    "heading": 0.338462
+  },
+  {
+    "image": "282060389.jpg",
+    "gate_commitment": 0,
+    "heading": 0.276923
+  },
+  {
+    "image": "282360412.jpg",
+    "gate_commitment": 0,
+    "heading": 0.292308
+  },
+  {
+    "image": "282627096.jpg",
+    "gate_commitment": 0,
+    "heading": 0.292308
+  },
+  {
+    "image": "282860908.jpg",
+    "gate_commitment": 0,
+    "heading": 0.380769
+  },
+  {
+    "image": "283293733.jpg",
+    "gate_commitment": 0,
+    "heading": 0.269231
+  },
+  {
+    "image": "283760405.jpg",
+    "gate_commitment": 1,
+    "heading": -0.057692
+  },
+  {
+    "image": "283960370.jpg",
+    "gate_commitment": 1,
+    "heading": -0.057692
+  },
+  {
+    "image": "284093722.jpg",
+    "gate_commitment": 1,
+    "heading": -0.057692
+  },
+  {
+    "image": "284227028.jpg",
+    "gate_commitment": 1,
+    "heading": -0.057692
+  },
+  {
+    "image": "284360464.jpg",
+    "gate_commitment": 1,
+    "heading": -0.057692
+  },
+  {
+    "image": "284760366.jpg",
+    "gate_commitment": 1,
+    "heading": -0.057692
+  },
+  {
+    "image": "285260372.jpg",
+    "gate_commitment": 1,
+    "heading": -0.057692
+  },
+  {
+    "image": "285393690.jpg",
+    "gate_commitment": 0,
+    "heading": -0.057692
+  },
+  {
+    "image": "285960589.jpg",
+    "gate_commitment": 0,
+    "heading": 0.123077
+  },
+  {
+    "image": "287060343.jpg",
+    "gate_commitment": 0,
+    "heading": 0.123077
+  },
+  {
+    "image": "287293705.jpg",
+    "gate_commitment": 0,
+    "heading": 0.161538
+  },
+  {
+    "image": "287427004.jpg",
+    "gate_commitment": 0,
+    "heading": 0.442308
+  },
+  {
+    "image": "288027006.jpg",
+    "gate_commitment": 0,
+    "heading": 0.469231
+  },
+  {
+    "image": "288160332.jpg",
+    "gate_commitment": 0,
+    "heading": 0.576923
+  },
+  {
+    "image": "288593681.jpg",
+    "gate_commitment": 0,
+    "heading": 0.573077
+  },
+  {
+    "image": "288726997.jpg",
+    "gate_commitment": 0,
+    "heading": 0.35
+  },
+  {
+    "image": "288860382.jpg",
+    "gate_commitment": 0,
+    "heading": 0.2
+  },
+  {
+    "image": "289360328.jpg",
+    "gate_commitment": 0,
+    "heading": 0.215385
+  },
+  {
+    "image": "289660324.jpg",
+    "gate_commitment": 0,
+    "heading": 0.557692
+  },
+  {
+    "image": "289793654.jpg",
+    "gate_commitment": 0,
+    "heading": 0.557692
+  },
+  {
+    "image": "290026987.jpg",
+    "gate_commitment": 0,
+    "heading": 0.623077
+  },
+  {
+    "image": "290460322.jpg",
+    "gate_commitment": 0,
+    "heading": 0.623077
+  },
+  {
+    "image": "290760452.jpg",
+    "gate_commitment": 0,
+    "heading": 0.623077
+  },
+  {
+    "image": "290893662.jpg",
+    "gate_commitment": 0,
+    "heading": 0.623077
+  },
+  {
+    "image": "291293676.jpg",
+    "gate_commitment": 0,
+    "heading": -0.676923
+  },
+  {
+    "image": "292360296.jpg",
+    "gate_commitment": 0,
+    "heading": -0.746154
+  },
+  {
+    "image": "292493635.jpg",
+    "gate_commitment": 0,
+    "heading": -0.611538
+  },
+  {
+    "image": "292760340.jpg",
+    "gate_commitment": 0,
+    "heading": -0.630769
+  },
+  {
+    "image": "292893672.jpg",
+    "gate_commitment": 0,
+    "heading": -0.576923
+  },
+  {
+    "image": "293126972.jpg",
+    "gate_commitment": 0,
+    "heading": -0.538462
+  },
+  {
+    "image": "293760332.jpg",
+    "gate_commitment": 0,
+    "heading": -0.538462
+  },
+  {
+    "image": "293860290.jpg",
+    "gate_commitment": 0,
+    "heading": -0.538462
+  },
+  {
+    "image": "294293669.jpg",
+    "gate_commitment": 0,
+    "heading": -0.538462
+  },
+  {
+    "image": "294426982.jpg",
+    "gate_commitment": 0,
+    "heading": -0.538462
+  },
+  {
+    "image": "294826945.jpg",
+    "gate_commitment": 0,
+    "heading": -0.538462
+  },
+  {
+    "image": "294960278.jpg",
+    "gate_commitment": 0,
+    "heading": -0.253846
+  },
+  {
+    "image": "295093612.jpg",
+    "gate_commitment": 0,
+    "heading": -0.253846
+  },
+  {
+    "image": "295226939.jpg",
+    "gate_commitment": 0,
+    "heading": -0.253846
+  },
+  {
+    "image": "295793609.jpg",
+    "gate_commitment": 0,
+    "heading": -0.238462
+  },
+  {
+    "image": "295926937.jpg",
+    "gate_commitment": 0,
+    "heading": -0.246154
+  },
+  {
+    "image": "296426952.jpg",
+    "gate_commitment": 0,
+    "heading": -0.253846
+  },
+  {
+    "image": "296560270.jpg",
+    "gate_commitment": 0,
+    "heading": -0.253846
+  },
+  {
+    "image": "296693597.jpg",
+    "gate_commitment": 0,
+    "heading": -0.238462
+  },
+  {
+    "image": "297160275.jpg",
+    "gate_commitment": 0,
+    "heading": -0.238462
+  },
+  {
+    "image": "297293599.jpg",
+    "gate_commitment": 0,
+    "heading": -0.230769
+  },
+  {
+    "image": "297426924.jpg",
+    "gate_commitment": 0,
+    "heading": -0.230769
+  },
+  {
+    "image": "297726935.jpg",
+    "gate_commitment": 0,
+    "heading": -0.230769
+  },
+  {
+    "image": "298293589.jpg",
+    "gate_commitment": 1,
+    "heading": -0.223077
+  },
+  {
+    "image": "298426918.jpg",
+    "gate_commitment": 0,
+    "heading": -0.065385
+  },
+  {
+    "image": "298593611.jpg",
+    "gate_commitment": 0,
+    "heading": 0.096154
+  },
+  {
+    "image": "299626932.jpg",
+    "gate_commitment": 0,
+    "heading": 0.353846
+  },
+  {
+    "image": "299760236.jpg",
+    "gate_commitment": 0,
+    "heading": 0.353846
+  },
+  {
+    "image": "299893664.jpg",
+    "gate_commitment": 0,
+    "heading": 0.353846
+  },
+  {
+    "image": "300060243.jpg",
+    "gate_commitment": 0,
+    "heading": 0.353846
+  },
+  {
+    "image": "300193568.jpg",
+    "gate_commitment": 0,
+    "heading": 0.353846
+  },
+  {
+    "image": "300360235.jpg",
+    "gate_commitment": 0,
+    "heading": 0.353846
+  }
+]
