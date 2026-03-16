@@ -8,7 +8,7 @@
     <target name="ap" board="bebop">
       <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
       <define name="LOGGER_FILE_PATH"   value="/data/ftp/internal_000/log"/>
-      <define name="MT9V117_TARGET_FPS" value="10"/>
+      <define name="MT9V117_TARGET_FPS" value="20"/>
       
       <configure name="USER_CFLAGS" value="-O3 -mfpu=neon -mfloat-abi=softfp -ftree-vectorize"/>
 
@@ -47,9 +47,9 @@
     <module name="bebop_cam"/>
     <module name="video_capture">
       <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
-      <define name="VIDEO_CAPTURE_FPS"    value="3"/>
+      <define name="VIDEO_CAPTURE_FPS"    value="10"/>
     </module>
-
+<!--
     <module name="gate_cnn">
       <define name="GATE_CNN_CAMERA"         value="front_camera"/>
       <define name="GATE_CNN_FPS"            value="2"/>
@@ -66,7 +66,7 @@
       <define name="CNN_NAV_APPROACH_TIME_S" value="4.0"/>
       <define name="CNN_NAV_PASS_TIME_S"    value="2.5"/>
     </module>
-
+-->
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA"          value="front_camera"/>
       <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
