@@ -1,0 +1,33 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="ground_seg_nav" dir="ground_seg_nav">
+  <doc>
+    <description>
+      Navigation module using ground segmentation for obstacle avoidance.
+      Reads the 3x3 grid from cv_ground_seg and steers toward the safest
+      direction in GUIDED mode.
+    </description>
+  </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings name="GroundSegNav">
+        <dl_setting var="gsn_max_speed"     min="0.0" step="0.05" max="1.0"  shortname="max_speed"/>
+        <dl_setting var="gsn_heading_rate"  min="0.1" step="0.05" max="1.5"  shortname="heading_rate"/>
+        <dl_setting var="gsn_floor_frac"    min="0.0" step="0.01" max="0.5"  shortname="floor_frac"/>
+        <dl_setting var="gsn_obstacle_frac" min="0.0" step="0.01" max="0.5"  shortname="obstacle_frac"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <header>
+    <file name="ground_seg_nav.h"/>
+  </header>
+
+  <init fun="ground_seg_nav_init()"/>
+  <periodic fun="ground_seg_nav_periodic()" freq="4"/>
+
+  <makefile target="ap|nps">
+    <file name="ground_seg_nav.c"/>
+  </makefile>
+
+</module>

@@ -20,6 +20,23 @@ extern bool ground_draw;
 extern void ground_segmentation_init(void);
 extern void ground_segmentation_periodic(void);
 
+/* Public struct so other modules can read segmentation results */
+struct ground_seg_result_t {
+  int32_t  x_c;
+  int32_t  y_c;
+  uint32_t pixel_count;
+  uint32_t left_count;
+  uint32_t center_count;
+  uint32_t right_count;
+  uint32_t top_count;
+  uint32_t middle_count;
+  uint32_t bottom_count;
+  bool     updated;
+};
+
+/* Thread-safe getter for the latest segmentation result */
+extern void ground_seg_get_result(struct ground_seg_result_t *out);
+
 #endif /* CV_GROUND_SEG_H */
 /*
  * Simple ground segmentation module using color thresholding in YUV space.

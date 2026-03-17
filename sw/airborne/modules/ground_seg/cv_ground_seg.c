@@ -51,29 +51,7 @@ uint8_t ground_cr_max  = 140;
 /* Whether detected pixels should be highlighted in the image */
 bool ground_draw = true;
 
-/*
- * Stores the latest segmentation result.
- */
-struct ground_seg_result_t {
-  /* Global centroid of all detected ground pixels */
-  int32_t x_c;
-  int32_t y_c;
 
-  /* Total number of detected ground pixels */
-  uint32_t pixel_count;
-
-  /* Vertical split */
-  uint32_t left_count;
-  uint32_t center_count;
-  uint32_t right_count;
-
-  /* Horizontal split */
-  uint32_t top_count;
-  uint32_t middle_count;
-  uint32_t bottom_count;
-
-  bool updated;
-};
 
 /* Shared result storage */
 static struct ground_seg_result_t ground_seg_result;
@@ -341,4 +319,13 @@ void ground_segmentation_periodic(void)
              local_result.x_c,
              local_result.y_c);
   }
+}
+
+
+
+void ground_seg_get_result(struct ground_seg_result_t *out)
+{
+  pthread_mutex_lock(&ground_seg_mutex);
+  memcpy(out, &ground_seg_result, sizeof(*out));
+  pthread_mutex_unlock(&ground_seg_mutex);
 }
