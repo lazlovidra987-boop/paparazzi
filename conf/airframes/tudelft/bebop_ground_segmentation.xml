@@ -71,11 +71,6 @@
     <!-- Ground segmentation navigation module -->
     <module name="ground_seg_nav"/>
 
-    <!-- Needed by guided flight plan -->
-    <module name="orange_avoider_guided">
-      <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
-      <define name="FLOOR_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION2_ID"/>
-    </module>
 
     <!-- RTP video stream -->
     <module name="video_rtp_stream">

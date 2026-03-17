@@ -1,180 +1,298 @@
 /*
  * ground_seg_nav.c
  *
- * Navigation module using ground segmentation for obstacle avoidance.
- * Reads the 3x3 grid from cv_ground_seg and steers the drone toward
- * the safest direction using GUIDED mode.
+ * Navigation using horizon-based ground segmentation.
+ *
+ * Behaviour:
+ * - Move forward when the center region is sufficiently open
+ * - Stop when the path is blocked
+ * - Choose the side with the most visible free ground
+ * - Keep turning that way until the center becomes open again
  */
 
 #include "ground_seg_nav.h"
 #include "modules/ground_seg/cv_ground_seg.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "state.h"
+
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <math.h>
 
 #define GSN_VERBOSE TRUE
 #define PRINT(string, ...) fprintf(stderr, "[ground_seg_nav->%s()] " string, __FUNCTION__, ##__VA_ARGS__)
+
 #if GSN_VERBOSE
 #define VERBOSE_PRINT PRINT
 #else
 #define VERBOSE_PRINT(...)
 #endif
 
-/* State machine states */
 enum gsn_nav_state_t {
-  GSN_SAFE,
-  GSN_OBSTACLE_FOUND,
-  GSN_SEARCH_SAFE_HEADING,
-  GSN_OUT_OF_BOUNDS,
-  GSN_REENTER_ARENA
+  GSN_FORWARD = 0,
+  GSN_STOP_AND_DECIDE,
+  GSN_TURNING
 };
 
 /* Tunable settings */
-float gsn_max_speed     = 0.3f;   // max forward speed [m/s]
-float gsn_heading_rate  = 0.4f;   // turning rate [rad/s]
-float gsn_floor_frac    = 0.10f;  // min fraction of bottom row that must be ground
-float gsn_obstacle_frac = 0.20f;  // min fraction of center column that must be ground
-
-/* Internal state */
-static enum gsn_nav_state_t nav_state = GSN_SEARCH_SAFE_HEADING;
-static int16_t obstacle_free_confidence = 0;
-static float turn_direction = 1.f;  // +1 = right (CW), -1 = left (CCW)
-
-const int16_t max_confidence = 5;
+float gsn_max_speed     = 0.12f; /* forward speed [m/s] */
+float gsn_heading_rate  = 0.12f; /* yaw rate while turning [rad/s] */
 
 /*
- * Decide which way to turn based on which side has more ground pixels.
+ * Legacy names kept for settings compatibility.
+ *
+ * New meaning:
+ * - gsn_floor_frac    = minimum center horizon mean to keep flying forward
+ * - gsn_obstacle_frac = minimum center horizon mean to leave turning mode
+ *
+ * These values must match the actual horizon scale.
+ * Your current horizon values are around 20-30, so 2-3 is too low.
  */
-static void choose_turn_direction(uint32_t left_count, uint32_t right_count)
+float gsn_floor_frac    = 10.0f;
+float gsn_obstacle_frac = 14.0f;
+
+/* Internal state */
+static enum gsn_nav_state_t nav_state = GSN_STOP_AND_DECIDE;
+static float turn_direction = 1.f; /* +1 = right, -1 = left */
+
+/* Require a few stable good frames before exiting turning */
+static uint8_t turn_exit_good_counter = 0U;
+static const uint8_t turn_exit_good_needed = 3U;
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
+
+static float compute_region_horizon_mean(const struct ground_seg_result_t *seg,
+                                         uint16_t start, uint16_t end)
 {
-  if (left_count >= right_count) {
-    turn_direction = -1.f;  // more ground on left -> turn left
-    VERBOSE_PRINT("Turning LEFT (left=%u right=%u)\n", left_count, right_count);
+  if (seg->cols == 0U || end <= start || end > seg->cols) {
+    return 0.f;
+  }
+
+  uint32_t sum = 0U;
+  uint16_t n = 0U;
+
+  for (uint16_t c = start; c < end; c++) {
+    sum += seg->horizon[c];
+    n++;
+  }
+
+  if (n == 0U) {
+    return 0.f;
+  }
+
+  return sum / (float)n;
+}
+
+static float compute_center_horizon_mean(const struct ground_seg_result_t *seg)
+{
+  if (seg->cols == 0U) {
+    return 0.f;
+  }
+
+  uint16_t start = seg->cols / 3U;
+  uint16_t end   = (2U * seg->cols) / 3U;
+
+  return compute_region_horizon_mean(seg, start, end);
+}
+
+static float compute_side_horizon_mean(const struct ground_seg_result_t *seg, bool left_side)
+{
+  if (seg->cols == 0U) {
+    return 0.f;
+  }
+
+  if (left_side) {
+    return compute_region_horizon_mean(seg, 0U, seg->cols / 3U);
   } else {
-    turn_direction = 1.f;   // more ground on right -> turn right
-    VERBOSE_PRINT("Turning RIGHT (left=%u right=%u)\n", left_count, right_count);
+    return compute_region_horizon_mean(seg, (2U * seg->cols) / 3U, seg->cols);
   }
 }
 
-/*
- * Init function - called once at startup
- */
-void ground_seg_nav_init(void)
+static bool is_forward_path_good(const struct ground_seg_result_t *seg)
 {
-  nav_state = GSN_SEARCH_SAFE_HEADING;
-  obstacle_free_confidence = 0;
-  turn_direction = 1.f;
-  VERBOSE_PRINT("Ground seg nav initialized\n");
+  if (seg->obstacle_ahead) {
+    return false;
+  }
+
+  return compute_center_horizon_mean(seg) >= gsn_floor_frac;
 }
 
-/*
- * Periodic function - called at ~4Hz by the autopilot
- */
-void ground_seg_nav_periodic(void)
+static bool is_turn_exit_condition_good(const struct ground_seg_result_t *seg)
 {
-  /* Only run in GUIDED mode */
-  if (guidance_h.mode != GUIDANCE_H_MODE_GUIDED) {
-    nav_state = GSN_SEARCH_SAFE_HEADING;
-    obstacle_free_confidence = 0;
+  if (seg->obstacle_ahead) {
+    return false;
+  }
+
+  return compute_center_horizon_mean(seg) >= gsn_obstacle_frac;
+}
+
+static void choose_turn_direction(const struct ground_seg_result_t *seg)
+{
+  float left_mean = compute_side_horizon_mean(seg, true);
+  float right_mean = compute_side_horizon_mean(seg, false);
+
+  /*
+   * Choose the side with more visible free ground.
+   * Fallback to score if means are nearly equal.
+   */
+  if (fabsf(left_mean - right_mean) < 1.0f) {
+    if (seg->left_score >= seg->right_score) {
+      turn_direction = -1.f; /* left */
+      VERBOSE_PRINT("Choose LEFT by score | L=%u R=%u\n",
+                    seg->left_score, seg->right_score);
+    } else {
+      turn_direction = 1.f;  /* right */
+      VERBOSE_PRINT("Choose RIGHT by score | L=%u R=%u\n",
+                    seg->left_score, seg->right_score);
+    }
     return;
   }
 
-  /* Get latest segmentation result */
+  if (left_mean > right_mean) {
+    turn_direction = -1.f; /* left */
+    VERBOSE_PRINT("Choose LEFT by mean | left_mean=%.2f right_mean=%.2f\n",
+                  left_mean, right_mean);
+  } else {
+    turn_direction = 1.f;  /* right */
+    VERBOSE_PRINT("Choose RIGHT by mean | left_mean=%.2f right_mean=%.2f\n",
+                  left_mean, right_mean);
+  }
+}
+
+static void hold_current_heading(void)
+{
+  guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
+}
+
+static void stop_motion(void)
+{
+  guidance_h_set_body_vel(0.f, 0.f);
+}
+
+static void command_forward(void)
+{
+  hold_current_heading();
+  guidance_h_set_body_vel(gsn_max_speed, 0.f);
+}
+
+static void command_turn(void)
+{
+  stop_motion();
+  guidance_h_set_heading_rate(turn_direction * gsn_heading_rate);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Paparazzi hooks                                                            */
+/* -------------------------------------------------------------------------- */
+
+void ground_seg_nav_init(void)
+{
+  nav_state = GSN_STOP_AND_DECIDE;
+  turn_direction = 1.f;
+  turn_exit_good_counter = 0U;
+  VERBOSE_PRINT("Ground seg nav initialized\n");
+}
+
+void ground_seg_nav_periodic(void)
+{
+  if (guidance_h.mode != GUIDANCE_H_MODE_GUIDED) {
+    nav_state = GSN_STOP_AND_DECIDE;
+    turn_exit_good_counter = 0U;
+    stop_motion();
+    return;
+  }
+
   struct ground_seg_result_t seg;
   ground_seg_get_result(&seg);
 
-  /* Use total image pixels as reference for fractions.
-   * We approximate using the sum of all region counts. */
-  uint32_t total_image = seg.left_count + seg.center_count + seg.right_count;
-  if (total_image == 0) { total_image = 1; }  // avoid division by zero
-
-  /* Each column/row is approximately 1/3 of total */
-  uint32_t third = total_image / 3 + 1;
-
-  /* Fraction of bottom row that is ground (cyberzoo boundary check) */
-  float bottom_frac = seg.bottom_count / (float)third;
-
-  /* Fraction of center column that is ground (obstacle check) */
-  float center_frac = seg.center_count / (float)third;
-
-  VERBOSE_PRINT("State=%d conf=%d bottom_frac=%.2f center_frac=%.2f\n",
-                nav_state, obstacle_free_confidence, bottom_frac, center_frac);
-
-  /* Update confidence: center column has enough ground = path is clear */
-  if (center_frac > gsn_obstacle_frac) {
-    obstacle_free_confidence++;
-  } else {
-    obstacle_free_confidence -= 2;
+  if (seg.cols == 0U || seg.rows == 0U) {
+    VERBOSE_PRINT("No valid segmentation data\n");
+    turn_exit_good_counter = 0U;
+    stop_motion();
+    return;
   }
 
-  /* Clamp confidence */
-  if (obstacle_free_confidence > max_confidence) { obstacle_free_confidence = max_confidence; }
-  if (obstacle_free_confidence < 0)              { obstacle_free_confidence = 0; }
+  float center_mean = compute_center_horizon_mean(&seg);
+  float left_mean   = compute_side_horizon_mean(&seg, true);
+  float right_mean  = compute_side_horizon_mean(&seg, false);
 
-  /* Speed scales with confidence */
-  float speed_sp = gsn_max_speed * ((float)obstacle_free_confidence / max_confidence);
+  bool forward_ok   = is_forward_path_good(&seg);
+  bool turn_exit_ok = is_turn_exit_condition_good(&seg);
 
-  /* State machine */
+  VERBOSE_PRINT("State=%d obstacle=%d center_mean=%.2f left_mean=%.2f right_mean=%.2f | L=%u C=%u R=%u | turn_dir=%.1f\n",
+                nav_state,
+                seg.obstacle_ahead,
+                center_mean,
+                left_mean,
+                right_mean,
+                seg.left_score,
+                seg.center_score,
+                seg.right_score,
+                turn_direction);
+
   switch (nav_state) {
 
-    case GSN_SAFE:
-      if (bottom_frac < gsn_floor_frac) {
-        VERBOSE_PRINT("Out of bounds detected\n");
-        nav_state = GSN_OUT_OF_BOUNDS;
-      } else if (obstacle_free_confidence == 0) {
-        VERBOSE_PRINT("Obstacle found\n");
-        nav_state = GSN_OBSTACLE_FOUND;
+    case GSN_FORWARD:
+      turn_exit_good_counter = 0U;
+
+      if (forward_ok) {
+        command_forward();
       } else {
-        guidance_h_set_body_vel(speed_sp, 0);
+        stop_motion();
+        nav_state = GSN_STOP_AND_DECIDE;
+        VERBOSE_PRINT("Forward blocked -> stop and decide\n");
       }
       break;
 
-    case GSN_OBSTACLE_FOUND:
-      /* Stop */
-      guidance_h_set_body_vel(0, 0);
-      /* Pick best turn direction using segmentation */
-      choose_turn_direction(seg.left_count, seg.right_count);
-      nav_state = GSN_SEARCH_SAFE_HEADING;
-      break;
+    case GSN_STOP_AND_DECIDE:
+      stop_motion();
+      turn_exit_good_counter = 0U;
 
-    case GSN_SEARCH_SAFE_HEADING:
-      /* Keep turning until confident the path ahead is clear */
-      guidance_h_set_heading_rate(turn_direction * gsn_heading_rate);
-      if (obstacle_free_confidence >= 2) {
-        guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
-        nav_state = GSN_SAFE;
-        VERBOSE_PRINT("Safe heading found\n");
+      if (forward_ok) {
+        nav_state = GSN_FORWARD;
+        VERBOSE_PRINT("Forward path clear -> move forward\n");
+      } else {
+        choose_turn_direction(&seg);
+        nav_state = GSN_TURNING;
+        VERBOSE_PRINT("Start turning\n");
       }
       break;
 
-    case GSN_OUT_OF_BOUNDS:
-      /* Stop and start turning back into the arena */
-      guidance_h_set_body_vel(0, 0);
-      guidance_h_set_heading_rate(turn_direction * gsn_heading_rate);
-      nav_state = GSN_REENTER_ARENA;
-      break;
+    case GSN_TURNING:
+      command_turn();
 
-    case GSN_REENTER_ARENA:
-      /* Keep turning until we see enough ground in the bottom row again */
-      if (bottom_frac >= gsn_floor_frac) {
-        guidance_h_set_heading(stateGetNedToBodyEulers_f()->psi);
-        obstacle_free_confidence = 0;
-        nav_state = GSN_SAFE;
-        VERBOSE_PRINT("Re-entered arena\n");
+      if (turn_exit_ok) {
+        if (turn_exit_good_counter < 255U) {
+          turn_exit_good_counter++;
+        }
+      } else {
+        turn_exit_good_counter = 0U;
+      }
+
+      if (turn_exit_good_counter >= turn_exit_good_needed) {
+        hold_current_heading();
+        nav_state = GSN_FORWARD;
+        turn_exit_good_counter = 0U;
+        VERBOSE_PRINT("Center open again -> forward\n");
       }
       break;
 
     default:
+      stop_motion();
+      nav_state = GSN_STOP_AND_DECIDE;
+      turn_exit_good_counter = 0U;
       break;
   }
 }
 
 /*
- * Dummy retreat function required by the guided flight plan.
- * The actual retreat behavior is handled by our state machine.
+ * Kept for guided flight-plan compatibility.
+ * Real avoidance is handled by the state machine above.
  */
 void orange_avoider_guided_retreat(void)
 {
-  guidance_h_set_body_vel(-0.3f, 0);  // move backwards briefly
+  guidance_h_set_body_vel(-0.2f, 0.f);
 }
