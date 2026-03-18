@@ -234,11 +234,13 @@ static uint32_t ground_seg_analyse_image(struct image_t *img,
        * - two vertical lines split left/center/right
        * - two horizontal lines split top/middle/bottom
        */
-      if (draw) {
-        if (x == x_div1 || x == x_div2 || y == y_div1 || y == y_div2) {
-          *yp = 255;  /* bright line */
-        }
-      }
+
+      //if (draw) {
+       // if (x == x_div1 || x == x_div2 || y == y_div1 || y == y_div2) {
+        //  *yp = 255;  /* bright line */
+       // }
+      //}
+      
 
       /*
        * Check if pixel lies inside the ground threshold box.

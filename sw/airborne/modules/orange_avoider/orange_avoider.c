@@ -55,6 +55,9 @@ float oa_color_count_frac = 0.18f;
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
 int32_t color_count = 0;                // orange color count from color filter for obstacle detection
+int32_t left_count = 0;
+int32_t center_count = 0;
+int32_t right_count = 0;
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
 float heading_increment = 5.f;          // heading angle increment [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
@@ -68,16 +71,35 @@ const int16_t max_trajectory_confidence = 5; // number of consecutive negative o
  * in different threads. The ABI event is triggered every time new data is sent out, and as such the function
  * defined in this file does not need to be explicitly called, only bound in the init function
  */
+
+// --- Binding 1: Ground segmentation (COLOR_OBJECT_DETECTION1_ID) ---
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
-                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
-                               int32_t quality, int16_t __attribute__((unused)) extra)
+                               int16_t pixel_width, int16_t pixel_height,
+                               int32_t quality, int16_t extra)
 {
-  color_count = quality;
+  color_count  = quality;
+  left_count   = pixel_width;
+  center_count = pixel_height;
+  right_count  = extra;
+}
+
+// --- Binding 2: Edge / object detection (COLOR_OBJECT_DETECTION2_ID) ---
+#ifndef ORANGE_AVOIDER_EDGE_DETECTION_ID
+#define ORANGE_AVOIDER_EDGE_DETECTION_ID ABI_BROADCAST
+#endif
+static abi_event edge_detection_ev;
+int32_t edge_blocks_detected = 0;
+static void edge_detection_cb(uint8_t __attribute__((unused)) sender_id,
+                              int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
+                              int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
+                              int32_t quality, int16_t __attribute__((unused)) extra)
+{
+  edge_blocks_detected = quality;  // quality = blocks_detected en obj_detection_std
 }
 
 /*
@@ -91,6 +113,7 @@ void orange_avoider_init(void)
 
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
+  AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_EDGE_DETECTION_ID,   &edge_detection_ev,  edge_detection_cb);
 }
 
 /*
@@ -101,6 +124,12 @@ void orange_avoider_periodic(void)
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){
     return;
+  }
+
+  if (left_count > right_count* 1.1){
+    VERBOSE_PRINT("If obstacle we should turn left");
+  } else if (right_count > left_count * 1.1){
+    VERBOSE_PRINT("If obstacle we should turn right");
   }
 
   // compute current color thresholds

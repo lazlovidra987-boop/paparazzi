@@ -15,12 +15,12 @@
 // Definimos un ID para nuestro módulo. 
 // ABI_BROADCAST significa "enviar a cualquiera que esté escuchando".
 #ifndef EDGE_DETECTION_ID
-#define EDGE_DETECTION_ID ABI_BROADCAST 
+#define EDGE_DETECTION_ID COLOR_OBJECT_DETECTION2_ID 
 #endif
 
 // 1. DEFINICIÓN DE VARIABLES GLOBALES (Declaradas como extern en el .h)
 uint16_t edge_block_size = 10;
-float edge_std_dev_threshold = 40.0f;
+float edge_std_dev_threshold = 20.0f;
 bool edge_draw_edges = true;
 
 // 2. VARIABLES PRIVADAS DEL MÓDULO

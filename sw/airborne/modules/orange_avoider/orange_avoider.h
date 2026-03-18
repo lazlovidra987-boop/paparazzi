@@ -13,8 +13,11 @@
 #ifndef ORANGE_AVOIDER_H
 #define ORANGE_AVOIDER_H
 
+#include <stdint.h>  
 // settings
 extern float oa_color_count_frac;
+// Añadir junto a las otras extern:
+extern int32_t edge_blocks_detected;
 
 // functions
 extern void orange_avoider_init(void);
