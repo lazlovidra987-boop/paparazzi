@@ -60,12 +60,14 @@ Usage
 -----
     python autolabel.py --image_dir /path/to/images --output labels.json
     python autolabel.py --image_dir /path/to/images --max_images 200
+    python autolabel.py --image_dir /path/to/images --shuffle
 """
 
 import os
 import sys
 import json
 import glob
+import random
 import argparse
 
 import cv2
@@ -222,6 +224,9 @@ def draw_overlay(
     heading,
     manual,
     gate_commitment,
+    current_index,
+    total_count,
+    image_name,
 ):
     vis = image_bgr.copy()
     H, W = vis.shape[:2]
@@ -274,6 +279,16 @@ def draw_overlay(
 
     cv2.putText(
         vis,
+        f"[{current_index}/{total_count}] {image_name}",
+        (10, 96),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.55,
+        (255, 255, 255),
+        1,
+    )
+
+    cv2.putText(
+        vis,
         "CLICK=target  ENTER/y=accept  c=toggle commit  a=auto  n=none  s=skip  q=quit",
         (10, H - 10),
         cv2.FONT_HERSHEY_SIMPLEX,
@@ -286,7 +301,10 @@ def draw_overlay(
 
 
 def save_labels(labels, output_path):
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    output_dir = os.path.dirname(os.path.abspath(output_path))
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(labels, f, indent=2)
 
@@ -296,6 +314,9 @@ def get_args():
     p.add_argument("--image_dir", required=True)
     p.add_argument("--output", default="labels.json")
     p.add_argument("--max_images", type=int, default=0)
+
+    p.add_argument("--shuffle", action="store_true", help="Shuffle image order before labelling")
+    p.add_argument("--seed", type=int, default=42, help="Random seed for shuffling")
 
     p.add_argument("--min_area", type=int, default=DEFAULT_MIN_AREA)
     p.add_argument("--max_area", type=int, default=DEFAULT_MAX_AREA)
@@ -318,11 +339,17 @@ def main():
     image_paths = []
     for pat in patterns:
         image_paths.extend(glob.glob(os.path.join(args.image_dir, pat)))
+
     image_paths = sorted(image_paths)
 
     if not image_paths:
         print(f"No images found in: {args.image_dir}")
         sys.exit(1)
+
+    if args.shuffle:
+        rng = random.Random(args.seed)
+        rng.shuffle(image_paths)
+        print(f"Shuffling enabled (seed={args.seed})")
 
     if args.max_images > 0:
         image_paths = image_paths[:args.max_images]
@@ -342,13 +369,14 @@ def main():
         print(f"Resuming — {len(labels)} labels already saved.")
 
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(WINDOW_NAME, 400, 700)
+    cv2.resizeWindow(WINDOW_NAME, 300, 525)
 
     accepted = 0
     skipped = 0
 
     for i, img_path in enumerate(image_paths):
         rel_path = os.path.relpath(img_path, args.image_dir)
+
         if rel_path in labelled_images:
             continue
 
@@ -416,6 +444,9 @@ def main():
                 heading=heading,
                 manual=manual,
                 gate_commitment=gate_commitment,
+                current_index=i + 1,
+                total_count=len(image_paths),
+                image_name=os.path.basename(img_path),
             )
             cv2.imshow(WINDOW_NAME, vis)
 
@@ -427,7 +458,9 @@ def main():
                     "gate_commitment": int(gate_commitment),
                     "heading": round(float(heading), 6),
                 })
+                labelled_images.add(rel_path)
                 accepted += 1
+
                 src = "manual" if manual else "auto"
                 print(
                     f"  -> Accepted ({src})  gate_commitment={gate_commitment}  heading={heading:+.3f}"
@@ -450,6 +483,7 @@ def main():
                     "gate_commitment": 0,
                     "heading": 0.0,
                 })
+                labelled_images.add(rel_path)
                 accepted += 1
                 print("  -> gate_commitment=0, heading=0")
                 break

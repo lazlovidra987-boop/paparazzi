@@ -5,44 +5,18 @@ Training script for DirectionGateNet.
 
 Usage
 -----
-    python train.py --root_dir /path/to/data --label_file labels.json
+    python train.py --root_dir /path/to/images --label_file /path/to/labels_mike.json
 
 Outputs
 -------
-  checkpoints/best_model.pth   <- best model by validation loss
-  checkpoints/last_model.pth   <- model at final epoch
-
-TensorBoard
------------
-Logs are written to:
-    runs/directiongatenet
-
-Start TensorBoard with:
-    tensorboard --logdir=runs
-
-Then open:
-    http://localhost:6006
-
-Current label layout (from dataset.py)
---------------------------------------
-  labels[:, 0] = gate_commitment   (0 or 1)
-  labels[:, 1] = heading    (float in [-1, 1])
-
-Current training setup
-----------------------
-  output 1 = heading       -> supervised with masked MSE loss
-  output 2 = gate_measure  -> currently trained as gate probability with BCE loss
-
-So for now:
-  gate_measure ≈ probability that a gate is present / relevant
-
-Later, if you switch your dataset labels to distance-to-gate, you can
-replace the BCE confidence loss with a regression loss.
+  checkpoints/best_model_dronet.pth   <- best model by validation loss
+  checkpoints/last_model_dronet.pth   <- model at final epoch
 """
 
 import os
-import argparse
+import re
 import time
+import argparse
 from typing import Tuple
 
 import torch
@@ -51,47 +25,128 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 
 from model_dronet import DirectionGateNet
-from dataset import split_dataset, GateDataset, _SubsetDataset
+from dataset import GateDataset, _SubsetDataset
 
-
-# ------------------------------------------------------------------
-# Argument parser
-# ------------------------------------------------------------------
 
 def get_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Train DirectionGateNet")
 
     # Data
-    p.add_argument("--root_dir", required=True)
-    p.add_argument("--label_file", default="labels.json")
+    p.add_argument("--root_dir", required=True, help="Folder containing the images")
+    p.add_argument("--label_file", default="labels_mike.json", help="Path to JSON label file")
     p.add_argument("--val_split", type=float, default=0.15)
 
+    # Split mode
+    p.add_argument(
+        "--split_mode",
+        choices=["chronological", "random"],
+        default="chronological",
+        help="Chronological split is better for video-like data",
+    )
+
     # Training
-    p.add_argument("--epochs", type=int, default=100)
+    p.add_argument("--epochs", type=int, default=30)
     p.add_argument("--batch_size", type=int, default=16)
-    p.add_argument("--lr", type=float, default=5e-4)
-    p.add_argument("--heading_weight", type=float, default=1.0,
-                   help="Weight on heading MSE loss.")
-    p.add_argument("--gate_weight", type=float, default=1.0,
-                   help="Weight on gate BCE loss.")
+    p.add_argument("--lr", type=float, default=3e-4)
+
+    p.add_argument("--heading_weight", type=float, default=2.0)
+    p.add_argument("--gate_weight", type=float, default=1.0)
 
     # Output
     p.add_argument("--checkpoint_dir", default="checkpoints")
     p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--log_dir", default="runs/directiongatenet")
+    p.add_argument("--log_dir", default="runs/directiongatenet_dronet")
 
     return p.parse_args()
 
 
-# ------------------------------------------------------------------
-# Weighted sampler — fixes class imbalance
-# ------------------------------------------------------------------
+def resolve_label_file(label_file: str) -> str:
+    """
+    Resolve label file robustly from:
+    - absolute path
+    - current working directory
+    - src/
+    - gate_cnn root
+    """
+    candidates = []
 
-def make_weighted_sampler(dataset) -> WeightedRandomSampler:
+    if os.path.isabs(label_file):
+        candidates.append(label_file)
+    else:
+        cwd = os.getcwd()
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        gate_cnn_root = os.path.dirname(script_dir)
+
+        candidates.append(os.path.join(cwd, label_file))
+        candidates.append(os.path.join(script_dir, label_file))
+        candidates.append(os.path.join(gate_cnn_root, label_file))
+
+    for path in candidates:
+        if os.path.exists(path):
+            return os.path.abspath(path)
+
+    raise FileNotFoundError(
+        f"Could not find label file '{label_file}'. Tried:\n" + "\n".join(candidates)
+    )
+
+
+def resolve_checkpoint_dir(checkpoint_dir: str) -> str:
     """
-    Oversample gate-visible images so each training epoch sees roughly
-    a balanced gate / no-gate ratio.
+    Resolve checkpoint directory relative to gate_cnn root,
+    not relative to wherever the terminal currently is.
     """
+    if os.path.isabs(checkpoint_dir):
+        return checkpoint_dir
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    gate_cnn_root = os.path.dirname(script_dir)
+    return os.path.abspath(os.path.join(gate_cnn_root, checkpoint_dir))
+
+
+def frame_number_from_name(name: str) -> int:
+    base = os.path.basename(name)
+    m = re.search(r"(\d+)", base)
+    return int(m.group(1)) if m else -1
+
+
+def split_dataset_custom(
+    root_dir: str,
+    label_file: str,
+    val_split: float,
+    seed: int,
+    split_mode: str = "chronological",
+):
+    full_ds = GateDataset(root_dir=root_dir, label_file=label_file)
+
+    n = len(full_ds)
+    if n < 2:
+        raise ValueError(f"Dataset too small: {n} samples")
+
+    if split_mode == "chronological":
+        indices = list(range(n))
+        indices.sort(key=lambda i: frame_number_from_name(full_ds.data[i]["image"]))
+    else:
+        g = torch.Generator().manual_seed(seed)
+        indices = torch.randperm(n, generator=g).tolist()
+
+    n_val = max(1, int(round(val_split * n)))
+    n_train = n - n_val
+
+    if n_train < 1:
+        raise ValueError(
+            f"Split invalid: n={n}, val_split={val_split} gives train={n_train}, val={n_val}"
+        )
+
+    train_indices = indices[:n_train]
+    val_indices = indices[n_train:]
+
+    train_ds = _SubsetDataset(full_ds, train_indices)
+    val_ds = _SubsetDataset(full_ds, val_indices)
+
+    return train_ds, val_ds
+
+
+def make_weighted_sampler(dataset) -> WeightedRandomSampler | None:
     labels = []
 
     if isinstance(dataset, _SubsetDataset):
@@ -111,8 +166,10 @@ def make_weighted_sampler(dataset) -> WeightedRandomSampler:
     n_no_gate = len(labels) - n_gate
     n_total = len(labels)
 
-    print(f"  Class balance: {n_gate} gate  |  {n_no_gate} no-gate  "
-          f"({100*n_gate/n_total:.1f}% / {100*n_no_gate/n_total:.1f}%)")
+    print(
+        f"  Class balance: {n_gate} gate  |  {n_no_gate} no-gate  "
+        f"({100*n_gate/max(1,n_total):.1f}% / {100*n_no_gate/max(1,n_total):.1f}%)"
+    )
 
     if n_gate == 0 or n_no_gate == 0:
         print("  WARNING: only one class present — sampler disabled.")
@@ -134,10 +191,6 @@ def make_weighted_sampler(dataset) -> WeightedRandomSampler:
     return sampler
 
 
-# ------------------------------------------------------------------
-# Loss function
-# ------------------------------------------------------------------
-
 def compute_loss(
     pred_heading: torch.Tensor,
     pred_gate: torch.Tensor,
@@ -145,25 +198,11 @@ def compute_loss(
     heading_weight: float = 1.0,
     gate_weight: float = 1.0,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """
-    Returns:
-        total_loss, heading_loss, gate_loss
-
-    Current label layout:
-      labels[:, 0] = gate_commitment  (0 or 1)
-      labels[:, 1] = heading   (float in [-1, 1])
-
-    Current model outputs:
-      pred_heading = heading in [-1,1]
-      pred_gate    = gate probability in [0,1]
-    """
     gt_gate_commitment = labels[:, 0]
     gt_heading = labels[:, 1]
 
-    # Gate loss for every sample
     gate_loss = nn.BCELoss()(pred_gate, gt_gate_commitment)
 
-    # Heading loss only when a gate is present
     gate_mask = gt_gate_commitment > 0.5
     if gate_mask.sum() > 0:
         heading_loss = nn.MSELoss()(
@@ -176,10 +215,6 @@ def compute_loss(
     total_loss = heading_weight * heading_loss + gate_weight * gate_loss
     return total_loss, heading_loss, gate_loss
 
-
-# ------------------------------------------------------------------
-# Train / validate one epoch
-# ------------------------------------------------------------------
 
 def train_one_epoch(model, loader, optimizer, device, heading_weight, gate_weight):
     model.train()
@@ -234,10 +269,6 @@ def validate(model, loader, device, heading_weight, gate_weight):
     return t_sum / n, h_sum / n, g_sum / n, correct / total if total > 0 else 0.0
 
 
-# ------------------------------------------------------------------
-# TensorBoard helpers
-# ------------------------------------------------------------------
-
 def log_model_weights(writer: SummaryWriter, model: torch.nn.Module, epoch: int):
     for name, param in model.named_parameters():
         writer.add_histogram(f"weights/{name}", param.detach().cpu(), epoch)
@@ -264,10 +295,6 @@ def log_sample_images(writer: SummaryWriter, loader: DataLoader, epoch: int):
         print(f"  Warning: could not log sample images: {e}")
 
 
-# ------------------------------------------------------------------
-# Main
-# ------------------------------------------------------------------
-
 def main():
     args = get_args()
     torch.manual_seed(args.seed)
@@ -275,20 +302,26 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
+    label_file = resolve_label_file(args.label_file)
+    checkpoint_dir = resolve_checkpoint_dir(args.checkpoint_dir)
+
+    print(f"Using label file: {label_file}")
+    print(f"Checkpoint dir:   {checkpoint_dir}")
+
     writer = SummaryWriter(log_dir=args.log_dir)
     print(f"TensorBoard logs: {args.log_dir}")
 
-    # --- Dataset -------------------------------------------------------
-    print(f"Loading dataset from: {args.root_dir}")
-    train_ds, val_ds = split_dataset(
+    print(f"Loading images from: {args.root_dir}")
+    train_ds, val_ds = split_dataset_custom(
         root_dir=args.root_dir,
-        label_file=args.label_file,
+        label_file=label_file,
         val_split=args.val_split,
         seed=args.seed,
+        split_mode=args.split_mode,
     )
     print(f"Train: {len(train_ds)} samples  |  Val: {len(val_ds)} samples")
+    print(f"Split mode: {args.split_mode}")
 
-    # --- Weighted sampler ---------------------------------------------
     print("Building weighted sampler...")
     sampler = make_weighted_sampler(train_ds)
 
@@ -296,6 +329,7 @@ def main():
         train_ds,
         batch_size=args.batch_size,
         sampler=sampler,
+        shuffle=False if sampler is not None else True,
         num_workers=2,
         pin_memory=True,
     )
@@ -308,10 +342,10 @@ def main():
         pin_memory=True,
     )
 
-    # --- Model ---------------------------------------------------------
     model = DirectionGateNet(output_mode="probability").to(device)
     total_params = sum(p.numel() for p in model.parameters())
     print(f"Parameters: {total_params:,}")
+    print("Model: DirectionGateNet from model_dronet.py")
 
     writer.add_text("run_info/model", "DirectionGateNet(output_mode='probability')")
     writer.add_text("run_info/device", str(device))
@@ -319,21 +353,25 @@ def main():
     writer.add_text("run_info/heading_weight", str(args.heading_weight))
     writer.add_text("run_info/gate_weight", str(args.gate_weight))
     writer.add_text("run_info/lr", str(args.lr))
+    writer.add_text("run_info/split_mode", str(args.split_mode))
+    writer.add_text("run_info/label_file", str(label_file))
+    writer.add_text("run_info/checkpoint_dir", str(checkpoint_dir))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.5, patience=8
     )
 
-    os.makedirs(args.checkpoint_dir, exist_ok=True)
+    os.makedirs(checkpoint_dir, exist_ok=True)
     best_val_loss = float("inf")
 
     log_sample_images(writer, train_loader, epoch=0)
 
-    # --- Training loop -------------------------------------------------
-    header = (f"{'Epoch':>5}  {'T-Loss':>8}  {'T-Head':>8}  {'T-Gate':>8}  "
-              f"{'V-Loss':>8}  {'V-Head':>8}  {'V-Gate':>8}  {'V-Acc':>7}  "
-              f"{'LR':>9}  {'Time':>5}")
+    header = (
+        f"{'Epoch':>5}  {'T-Loss':>8}  {'T-Head':>8}  {'T-Gate':>8}  "
+        f"{'V-Loss':>8}  {'V-Head':>8}  {'V-Gate':>8}  {'V-Acc':>7}  "
+        f"{'LR':>9}  {'Time':>5}"
+    )
     print(f"\n{header}")
     print("-" * len(header))
 
@@ -360,7 +398,6 @@ def main():
             f"{v_acc:>7.3f}  {current_lr:>9.2e}  {elapsed:>4.1f}s"
         )
 
-        # TensorBoard scalars
         writer.add_scalar("loss/train_total", t_loss, epoch)
         writer.add_scalar("loss/train_heading", t_hloss, epoch)
         writer.add_scalar("loss/train_gate", t_gloss, epoch)
@@ -380,16 +417,19 @@ def main():
 
         if v_loss < best_val_loss:
             best_val_loss = v_loss
-            path = os.path.join(args.checkpoint_dir, "best_model.pth")
-            torch.save(model.state_dict(), path)
-            print(f"  -> Best model saved (val_loss={v_loss:.4f})")
+            best_path = os.path.join(checkpoint_dir, "best_model_dronet.pth")
+            torch.save(model.state_dict(), best_path)
+            print(f"  -> Best model saved to: {best_path}")
 
-    torch.save(model.state_dict(), os.path.join(args.checkpoint_dir, "last_model.pth"))
+    last_path = os.path.join(checkpoint_dir, "last_model_dronet.pth")
+    torch.save(model.state_dict(), last_path)
+    print(f"Last model saved to: {last_path}")
+
     writer.close()
 
     print("\nTraining complete.")
     print(f"Best val loss : {best_val_loss:.4f}")
-    print(f"Checkpoint    : {args.checkpoint_dir}/best_model.pth")
+    print(f"Checkpoint    : {os.path.join(checkpoint_dir, 'best_model_dronet.pth')}")
     print("TensorBoard   : tensorboard --logdir=runs")
 
 
