@@ -134,6 +134,7 @@ inline void setGuided(void){
 
     <block key="g" name="START" strip_button="Go" strip_icon="lookfore.png">
       <call_once fun="setGuided()"/>
+      <call_once fun="mission_manager_init()"/>
       <stay wp="STDBY"/>
     </block>
 
