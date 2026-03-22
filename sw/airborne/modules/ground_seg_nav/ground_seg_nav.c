@@ -36,7 +36,7 @@ enum gsn_nav_state_t {
 };
 
 /* Tunable settings */
-float gsn_max_speed     = 0.12f; /* forward speed [m/s] */
+float gsn_max_speed     = 0.25f; /* forward speed [m/s] */
 float gsn_heading_rate  = 0.12f; /* yaw rate while turning [rad/s] */
 
 /*
