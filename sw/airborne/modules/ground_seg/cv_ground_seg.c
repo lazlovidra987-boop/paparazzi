@@ -33,6 +33,7 @@
 #include <math.h>
 #include <pthread.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define GS_PRINT(string, ...) \
   fprintf(stderr, "[cv_ground_seg->%s()] " string, __FUNCTION__, ##__VA_ARGS__)
@@ -183,6 +184,34 @@ static inline void get_yuv422_pixel(struct image_t *img, uint16_t x, uint16_t y,
   *U = u;
   *V = v;
   *Y = ((src_x & 1U) == 0U) ? y0 : y1;
+}
+
+static inline void set_yuv422_pixel(struct image_t *img, uint16_t x, uint16_t y,
+                                    uint8_t Y, uint8_t U, uint8_t V)
+{
+  if (img == NULL || img->buf == NULL || img->w < 2U || img->h == 0U) {
+    return;
+  }
+
+  uint16_t src_x, src_y;
+  logical_to_physical(img, x, y, &src_x, &src_y);
+
+  uint16_t x_pair = (uint16_t)(src_x & ~1U);
+  if (x_pair >= img->w - 1U) {
+    x_pair = (img->w >= 2U) ? (img->w - 2U) : 0U;
+  }
+
+  uint32_t base = (uint32_t)src_y * 2U * img->w + 2U * x_pair;
+  uint8_t *buffer = img->buf;
+
+  buffer[base] = U;
+  buffer[base + 2] = V;
+
+  if ((src_x & 1U) == 0U) {
+    buffer[base + 1U] = Y;
+  } else {
+    buffer[base + 3U] = Y;
+  }
 }
 
 static inline bool is_ground_yuv(uint8_t Y, uint8_t U, uint8_t V)
@@ -551,6 +580,228 @@ static void compute_centroid_and_ground_count(struct ground_seg_result_t *res)
 }
 
 /* -------------------------------------------------------------------------- */
+/* New image processing functions (from test.py)                             */
+/* -------------------------------------------------------------------------- */
+
+#define KERNEL_SIZE 5
+#define SIGMA 1.0f
+
+static float gaussian_kernel[KERNEL_SIZE][KERNEL_SIZE];
+
+static void init_gaussian_kernel(void)
+{
+  int ax = -(KERNEL_SIZE / 2);
+  for (int i = 0; i < KERNEL_SIZE; i++) {
+    for (int j = 0; j < KERNEL_SIZE; j++) {
+      float x = ax + j;
+      float y = ax + i;
+      gaussian_kernel[i][j] = expf(-(x*x + y*y) / (2 * SIGMA * SIGMA));
+    }
+  }
+  float sum = 0.0f;
+  for (int i = 0; i < KERNEL_SIZE; i++) {
+    for (int j = 0; j < KERNEL_SIZE; j++) {
+      sum += gaussian_kernel[i][j];
+    }
+  }
+  for (int i = 0; i < KERNEL_SIZE; i++) {
+    for (int j = 0; j < KERNEL_SIZE; j++) {
+      gaussian_kernel[i][j] /= sum;
+    }
+  }
+}
+
+static void convolve_grayscale(uint8_t *input, uint8_t *output, uint16_t w, uint16_t h)
+{
+  int k = KERNEL_SIZE / 2;
+  for (int y = 0; y < h; y++) {
+    for (int x = 0; x < w; x++) {
+      float sum = 0.0f;
+      for (int i = -k; i <= k; i++) {
+        for (int j = -k; j <= k; j++) {
+          int yy = y + i;
+          int xx = x + j;
+          if (yy >= 0 && yy < h && xx >= 0 && xx < w) {
+            sum += input[yy * w + xx] * gaussian_kernel[i + k][j + k];
+          }
+        }
+      }
+      output[y * w + x] = (uint8_t)sum;
+    }
+  }
+}
+
+static uint8_t otsu_threshold(uint8_t *img, uint16_t w, uint16_t h)
+{
+  uint32_t hist[256] = {0};
+  for (int i = 0; i < w * h; i++) {
+    hist[img[i]]++;
+  }
+  float prob[256];
+  for (int i = 0; i < 256; i++) {
+    prob[i] = hist[i] / (float)(w * h);
+  }
+  float omega[256];
+  omega[0] = prob[0];
+  for (int i = 1; i < 256; i++) {
+    omega[i] = omega[i-1] + prob[i];
+  }
+  float mu[256];
+  mu[0] = 0;
+  for (int i = 1; i < 256; i++) {
+    mu[i] = mu[i-1] + i * prob[i];
+  }
+  float mu_t = mu[255];
+  float sigma_b[256];
+  for (int i = 0; i < 256; i++) {
+    if (omega[i] == 0 || omega[i] == 1) {
+      sigma_b[i] = 0;
+    } else {
+      sigma_b[i] = (mu_t * omega[i] - mu[i]) * (mu_t * omega[i] - mu[i]) / (omega[i] * (1 - omega[i]));
+    }
+  }
+  uint8_t T = 0;
+  float max_sigma = 0;
+  for (int i = 0; i < 256; i++) {
+    if (sigma_b[i] > max_sigma) {
+      max_sigma = sigma_b[i];
+      T = i;
+    }
+  }
+  return T;
+}
+
+static void dilation(uint8_t *input, uint8_t *output, uint16_t w, uint16_t h)
+{
+  for (int y = 0; y < h; y++) {
+    for (int x = 0; x < w; x++) {
+      uint8_t max_val = 0;
+      for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+          int yy = y + i;
+          int xx = x + j;
+          if (yy >= 0 && yy < h && xx >= 0 && xx < w) {
+            if (input[yy * w + xx] > max_val) {
+              max_val = input[yy * w + xx];
+            }
+          }
+        }
+      }
+      output[y * w + x] = max_val;
+    }
+  }
+}
+
+static void set_grayscale_image(struct image_t *img, uint8_t *gray)
+{
+  uint16_t w = img->w;
+  uint16_t h = img->h;
+  uint8_t *buffer = img->buf;
+
+  for (uint16_t y = 0; y < h; y++) {
+    for (uint16_t x = 0; x < w; x += 2) {
+      uint16_t x_pair = x / 2;
+      uint32_t base = (uint32_t)y * 2 * w + 2 * x_pair;
+
+      uint8_t Y1 = gray[y * w + x];
+      uint8_t Y2 = (x + 1 < w) ? gray[y * w + x + 1] : Y1;
+
+      buffer[base + 1] = Y1;
+      buffer[base + 3] = Y2;
+      buffer[base] = 128; // U
+      buffer[base + 2] = 128; // V
+    }
+  }
+}
+
+static void apply_test_py_processing(struct image_t *img)
+{
+  uint16_t lw = logical_width(img);
+  uint16_t lh = logical_height(img);
+
+  // Allocate buffers for grayscale
+  static uint8_t *gray = NULL;
+  static uint8_t *blurred = NULL;
+  static uint8_t *binary = NULL;
+  static uint8_t *dilated = NULL;
+  static uint8_t *final_gray = NULL;
+  static size_t buf_size = 0;
+
+  size_t needed = lw * lh;
+  if (buf_size < needed) {
+    free(gray);
+    free(blurred);
+    free(binary);
+    free(dilated);
+    free(final_gray);
+    gray = malloc(needed);
+    blurred = malloc(needed);
+    binary = malloc(needed);
+    dilated = malloc(needed);
+    final_gray = malloc(needed);
+    buf_size = needed;
+  }
+
+  if (!gray || !blurred || !binary || !dilated || !final_gray) {
+    return; // allocation failed
+  }
+
+  // Extract grayscale from Y channel
+  for (uint16_t y = 0; y < lh; y++) {
+    for (uint16_t x = 0; x < lw; x++) {
+      uint8_t Y, U, V;
+      get_yuv422_pixel(img, x, y, &Y, &U, &V);
+      gray[y * lw + x] = Y;
+    }
+  }
+
+  // Crop bottom half
+  uint16_t crop_h = lh / 2;
+  uint16_t crop_start = lh - crop_h; // bottom half
+
+  // Blur the cropped part
+  init_gaussian_kernel();
+  convolve_grayscale(gray + crop_start * lw, blurred, lw, crop_h);
+
+  // Otsu threshold
+  uint8_t T = otsu_threshold(blurred, lw, crop_h);
+  for (int i = 0; i < lw * crop_h; i++) {
+    binary[i] = (blurred[i] > T) ? 255 : 0;
+  }
+
+  // Dilation
+  dilation(binary, dilated, lw, crop_h);
+
+  // Create final gray: top half black, bottom half dilated
+  memset(final_gray, 0, needed);
+  memcpy(final_gray + crop_start * lw, dilated, lw * crop_h);
+
+  // Set the image to final_gray.
+  // Map binary output into YUV values that are treated as "ground" by cv_ground_seg.
+  // White after threshold -> ground-like YUV; black -> non-ground values.
+  for (uint16_t y = 0; y < lh; y++) {
+    for (uint16_t x = 0; x < lw; x++) {
+      uint8_t val = final_gray[y * lw + x];
+      uint8_t Y, U, V;
+
+      if (y >= crop_start && val > 0) {
+        // Detected ground region
+        Y = 100;             // inside ground_lum_min..ground_lum_max (50..150)
+        U = 90;              // inside ground_cb_min..ground_cb_max (70..120)
+        V = 90;              // inside ground_cr_min..ground_cr_max (50..140)
+      } else {
+        // Non-ground/obstacle region
+        Y = 20;
+        U = 128;
+        V = 128;
+      }
+
+      set_yuv422_pixel(img, x, y, Y, U, V);
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* Main analysis                                                              */
 /* -------------------------------------------------------------------------- */
 
@@ -640,6 +891,9 @@ static struct image_t *ground_seg_process_image(struct image_t *img, uint8_t cam
 
     dumped = true;
   }
+
+  // Apply test.py processing to modify the image
+  apply_test_py_processing(img);
 
   struct ground_seg_result_t local_result;
   ground_seg_analyse_image(img, &local_result);

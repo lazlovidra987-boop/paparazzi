@@ -49,8 +49,8 @@ float gsn_heading_rate  = 0.12f; /* yaw rate while turning [rad/s] */
  * These values must match the actual horizon scale.
  * Your current horizon values are around 20-30, so 2-3 is too low.
  */
-float gsn_floor_frac    = 10.0f;
-float gsn_obstacle_frac = 14.0f;
+float gsn_floor_frac    = 8.0f;
+float gsn_obstacle_frac = 10.0f;
 
 /* Internal state */
 static enum gsn_nav_state_t nav_state = GSN_STOP_AND_DECIDE;
