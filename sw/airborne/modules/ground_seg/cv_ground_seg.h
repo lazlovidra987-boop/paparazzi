@@ -17,6 +17,9 @@ extern uint8_t ground_cb_max;
 extern uint8_t ground_cr_min;
 extern uint8_t ground_cr_max;
 
+/* Use tree instead of pure thresholds */
+extern bool ground_use_tree;
+
 /*
  * Segmentation settings
  *

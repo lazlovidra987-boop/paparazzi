@@ -20,6 +20,10 @@
         <dl_setting var="ground_cr_min" min="0" step="1" max="255" shortname="v_min"/>
         <dl_setting var="ground_cr_max" min="0" step="1" max="255" shortname="v_max"/>
         <dl_setting var="ground_draw" min="0" step="1" max="1" values="False|True" shortname="draw"/>
+        <dl_setting var="ground_use_tree"
+            min="0" step="1" max="1"
+            values="False|True"
+            shortname="tree"/>
       </dl_settings>
     </dl_settings>
   </settings>
