@@ -14,6 +14,7 @@
 #include "modules/ground_seg/cv_ground_seg.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "state.h"
+//#include "modules/your_cnn_module/your_cnn_module.h"  /* TODO: find real path */
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -38,6 +39,12 @@ enum gsn_nav_state_t {
 /* Tunable settings */
 float gsn_max_speed     = 0.12f; /* forward speed [m/s] */
 float gsn_heading_rate  = 0.12f; /* yaw rate while turning [rad/s] */
+/* --- Gate --- */
+float gsn_gate_conf_low             = 0.40f;  /* Below this, ignore gate detection */
+float gsn_gate_conf_high            = 0.70f;  /* Minimum confidence for a valid gate candidate */
+float gsn_gate_approach_speed       = 0.18f;  /* Speed when confidently approaching a gate */
+float gsn_gate_max_heading_error    = 0.6f;   /* Maximum allowed heading error to approach the gate [rad] */
+float gsn_gate_heading_filter_alpha = 0.7f;   /* Low-pass filter alpha for gate heading (0-1, higher is smoother) */
 
 /*
  * Legacy names kept for settings compatibility.
@@ -51,6 +58,42 @@ float gsn_heading_rate  = 0.12f; /* yaw rate while turning [rad/s] */
  */
 float gsn_floor_frac    = 10.0f;
 float gsn_obstacle_frac = 14.0f;
+
+/*
+ * Gate detection internal state.
+ *
+ * Heading values:
+ * - gate_heading           = raw heading error from CNN [rad], updated each cycle when valid
+ * - gate_heading_filtered  = low-pass smoothed heading, used for all control commands
+ * - last_good_gate_heading = last filtered heading with high confidence,
+ *                            used as fallback during GSN_GATE_LOST_RECOVER
+ *
+ * Confidence:
+ * - gate_confidence        = raw confidence score from CNN [0.0 - 1.0], updated each cycle
+ *
+ * Confirmation counters:
+ * - gate_seen_counter      = consecutive cycles with a good detection,
+ *                            must reach gate_seen_needed before entering GSN_GATE_APPROACH
+ * - gate_lost_counter      = consecutive cycles without a good detection,
+ *                            triggers return to GSN_FORWARD when it reaches gate_lost_max
+ *
+ * Thresholds:
+ * - gate_seen_needed       = number of stable frames required to confirm a gate (enter approach)
+ * - gate_lost_max          = number of missing frames tolerated before abandoning gate pursuit
+ *
+ * Higher gate_seen_needed = less likely to chase false positives, slower to react
+ * Higher gate_lost_max    = more tolerant of brief CNN dropouts, slower to give up
+ */
+static float   gate_heading           = 0.f;
+static float   gate_heading_filtered  = 0.f;
+static float   gate_confidence        = 0.f;
+static float   last_good_gate_heading = 0.f;
+
+static uint8_t gate_seen_counter = 0U;
+static uint8_t gate_lost_counter = 0U;
+
+static const uint8_t gate_seen_needed = 3U;
+static const uint8_t gate_lost_max    = 5U;
 
 /* Internal state */
 static enum gsn_nav_state_t nav_state = GSN_STOP_AND_DECIDE;
@@ -286,6 +329,63 @@ void ground_seg_nav_periodic(void)
       turn_exit_good_counter = 0U;
       break;
   }
+}
+
+
+/* ----- Gate helpers ----- */
+
+/* TODO: confirm variable names */
+static void get_gate_result(float *heading, float *confidence, bool *valid)
+{
+  *heading    = gate_cnn_result.heading;
+  *confidence = gate_cnn_result.conf;
+  *valid      = (gate_cnn_result.conf > 0.f); /* TODO: confirm validity condition with your CNN module */
+}
+
+
+static bool is_gate_conf_low(float conf)  { return conf <  gsn_gate_conf_low;  }  /* Below this, ignore gate detection */
+static bool is_gate_conf_high(float conf) { return conf >= gsn_gate_conf_high; }  /* Minimum confidence for a valid gate candidate */
+
+/* Check if CNN heading is valid */
+static bool is_gate_heading_valid(float heading)  /* Check if the heading error is a reasonable value (not NaN/inf and within max error) */
+{
+  if (isnan(heading) || isinf(heading)) { return false; }
+  return fabsf(heading) <= gsn_gate_max_heading_error * 5.f;
+}
+
+/* Low-pass filter for gate heading */
+static float filter_gate_heading(float prev, float raw)
+{
+  return gsn_gate_heading_filter_alpha * prev
+       + (1.f - gsn_gate_heading_filter_alpha) * raw;
+}
+
+/* Check confidence and heading validity */
+static bool is_gate_candidate_good(bool valid, float heading, float conf)
+{
+  return valid
+      && is_gate_conf_high(conf)
+      && is_gate_heading_valid(heading);
+}
+
+/* Check if we can safely approach the gate based on current segmentation */
+static bool is_gate_approach_safe(const struct ground_seg_result_t *seg)
+{
+  return is_forward_path_good(seg);
+}
+
+/*
+ * -- TODO: confirm control logic with your CNN output --
+
+ * gate_heading_offset is a body-frame heading error [rad].
+ * Positive = gate is right of drone nose, negative = left.
+ * If CNN outputs absolute NED heading, remove the current_heading addition.
+ */
+static void command_gate_approach(float gate_heading_offset)
+{
+  float desired = stateGetNedToBodyEulers_f()->psi + gate_heading_offset;
+  guidance_h_set_heading(desired);
+  guidance_h_set_body_vel(gsn_gate_approach_speed, 0.f);
 }
 
 /*
