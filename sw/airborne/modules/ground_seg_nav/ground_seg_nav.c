@@ -4,7 +4,7 @@
  * Navigation using horizon-based ground segmentation.
  *
  * Behaviour:
- * - Move forward when the center region is sufficiently open
+ * - Move forward when the center region is open
  * - Stop when the path is blocked
  * - Choose the side with the most visible free ground
  * - Keep turning that way until the center becomes open again
@@ -36,21 +36,19 @@ enum gsn_nav_state_t {
 };
 
 /* Tunable settings */
-float gsn_max_speed     = 0.12f; /* forward speed [m/s] */
-float gsn_heading_rate  = 0.12f; /* yaw rate while turning [rad/s] */
+float gsn_max_speed     = 0.20f; /* forward speed [m/s] */
+float gsn_heading_rate  = 0.18f; /* yaw rate while turning [rad/s] */
 
 /*
- * Legacy names kept for settings compatibility.
+ * Settings meaning:
+ * - gsn_floor_frac: min center mean to keep moving forward
+ * - gsn_obstacle_frac: min center mean to exit turning
  *
- * New meaning:
- * - gsn_floor_frac    = minimum center horizon mean to keep flying forward
- * - gsn_obstacle_frac = minimum center horizon mean to leave turning mode
- *
- * These values must match the actual horizon scale.
- * Your current horizon values are around 20-30, so 2-3 is too low.
+ * Must match horizon scale (~20–30), so small values (2–3) are too low.
  */
+
 float gsn_floor_frac    = 10.0f;
-float gsn_obstacle_frac = 14.0f;
+float gsn_obstacle_frac = 15.0f;
 
 /* Internal state */
 static enum gsn_nav_state_t nav_state = GSN_STOP_AND_DECIDE;
@@ -58,7 +56,7 @@ static float turn_direction = 1.f; /* +1 = right, -1 = left */
 
 /* Require a few stable good frames before exiting turning */
 static uint8_t turn_exit_good_counter = 0U;
-static const uint8_t turn_exit_good_needed = 3U;
+static const uint8_t turn_exit_good_needed = 4U;
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
@@ -292,6 +290,7 @@ void ground_seg_nav_periodic(void)
  * Kept for guided flight-plan compatibility.
  * Real avoidance is handled by the state machine above.
  */
+
 void orange_avoider_guided_retreat(void)
 {
   guidance_h_set_body_vel(-0.2f, 0.f);

@@ -3,23 +3,15 @@
  *
  * Ground segmentation for Paparazzi.
  *
- * Report-aligned logic:
- * 1. Interpret the incoming image as rotated 90 deg counterclockwise
- * 2. Downsample the logical image into blocks
- * 3. Classify each block in YUV422 using a small multi-sample vote
- * 4. Scan each logical column from bottom to top
- * 5. Reclassify short black gaps (< MIN_BLACK) back to ground
+ * Following logic:
+ * 1. Rotate image 90 degree counterclockwise 
+ * 2. Downsample image into blocks
+ * 3. Classify each block in YUV422 with votes from 5 samples
+ * 4. Scan each column from bottom to top
+ * 5. Reclassify short gaps (< MIN_BLACK) back to ground
  * 6. Store visible ground depth in horizon[]
  * 7. Derive left / center / right scores
  * 8. Detect obstacle_ahead from middle columns
- *
- * Important notes:
- * - No edge detection here
- * - Uses safer YUV422 access
- * - Uses explicit short-gap reclassification
- * - Keeps ABI interface compatible with existing setup
- * - Applies a hard 90 deg counterclockwise rotation in software so the
- *   segmentation logic sees the same orientation as intended
  */
 
 #include "cv_ground_seg.h"
@@ -42,12 +34,11 @@
 #endif
 
 #ifndef GS_DEBUG_EVERY_N_FRAMES
-#define GS_DEBUG_EVERY_N_FRAMES 20
+#define GS_DEBUG_EVERY_N_FRAMES 50
 #endif
 
-/* -------------------------------------------------------------------------- */
+
 /* Internal shared state                                                      */
-/* -------------------------------------------------------------------------- */
 
 struct ground_seg_shared_t {
   struct ground_seg_result_t result;
@@ -58,9 +49,9 @@ static pthread_mutex_t ground_seg_mutex;
 static struct ground_seg_shared_t ground_seg_shared;
 static uint32_t gs_frame_counter = 0U;
 
-/* -------------------------------------------------------------------------- */
+
 /* Tunable parameters                                                         */
-/* -------------------------------------------------------------------------- */
+
 
 uint8_t ground_lum_min = 50;
 uint8_t ground_lum_max = 150;
@@ -72,18 +63,18 @@ uint8_t ground_cr_max  = 140;
 uint8_t ground_downsize_x  = 4;
 uint8_t ground_downsize_y  = 4;
 uint8_t ground_min_black   = 5;
-uint8_t ground_middle_cols = 10;
+uint8_t ground_middle_cols = 12;
 
 bool ground_draw = true;
 
+bool ground_draw_big = true;  /* use larger debug markers */
+
 bool ground_use_tree = false;  /* default: use threshold method */
 
-/* Downsized binary classification map in LOGICAL rotated coordinates */
+/* Binary ground map */
 static uint8_t ground_small[GS_MAX_ROWS][GS_MAX_COLS];
 
-/* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
-/* -------------------------------------------------------------------------- */
 
 static inline bool should_print_debug(void)
 {
@@ -106,15 +97,8 @@ static inline uint16_t clamp_u16(uint16_t v, uint16_t lo, uint16_t hi)
   return v;
 }
 
-/*
- * Physical image dimensions from camera buffer:
- *   phys_w = img->w
- *   phys_h = img->h
- *
- * Logical image dimensions used by segmentation after 90 deg CCW rotation:
- *   logical_w = phys_h
- *   logical_h = phys_w
- */
+/*  Swap width and height due to 90 degree counterclockwise rotation. */
+
 static inline uint16_t logical_width(const struct image_t *img)
 {
   return img->h;
@@ -126,12 +110,10 @@ static inline uint16_t logical_height(const struct image_t *img)
 }
 
 /*
- * Map logical rotated coordinates to physical camera-buffer coordinates.
- *
- * 90 deg counterclockwise:
- *   src_x = phys_w - 1 - y_logical
- *   src_y = x_logical
+ * Swap logical coordinates (x, y) to physical coordinates (src_x, src_y) 
+ * in the original image buffer, taking into account the 90 degree counterclockwise rotation.
  */
+
 static inline void logical_to_physical(const struct image_t *img,
                                        uint16_t x_logical, uint16_t y_logical,
                                        uint16_t *x_phys, uint16_t *y_phys)
@@ -150,12 +132,8 @@ static inline void logical_to_physical(const struct image_t *img,
   *y_phys = x_logical;
 }
 
-/*
- * Safe YUV422 reader in LOGICAL rotated coordinates.
- *
- * Assumed physical buffer layout:
- *   U Y0 V Y1
- */
+/* Read YUV422 pixel (rotated coords, UYVY layout) */
+
 static inline void get_yuv422_pixel(struct image_t *img, uint16_t x, uint16_t y,
                                     uint8_t *Y, uint8_t *U, uint8_t *V)
 {
@@ -234,6 +212,32 @@ static void draw_classified_pixel(struct image_t *img, uint16_t x, uint16_t y, b
   }
 }
 
+/*
+ * New ground marker
+ */
+
+static void draw_classified_marker(struct image_t *img, uint16_t x, uint16_t y, bool is_ground)
+{
+  uint16_t lw = logical_width(img);
+  uint16_t lh = logical_height(img);
+
+  for (int dy = -1; dy <= 1; dy++) {
+    for (int dx = -1; dx <= 1; dx++) {
+      int xx = (int)x + dx;
+      int yy = (int)y + dy;
+
+      if (xx >= 0 && yy >= 0 && xx < (int)lw && yy < (int)lh) {
+        draw_classified_pixel(img, (uint16_t)xx, (uint16_t)yy, is_ground);
+      }
+    }
+  }
+}
+
+/*
+ * The block classification is based on 5 samples in a cross pattern (center, left, right, up, down).
+ */
+
+
 static uint8_t classify_block_vote(struct image_t *img,
                                    uint16_t x0, uint16_t y0,
                                    uint16_t block_w, uint16_t block_h)
@@ -275,9 +279,9 @@ static uint8_t classify_block_vote(struct image_t *img,
   return (hits >= 3U) ? 1U : 0U;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Debug                                                                      */
-/* -------------------------------------------------------------------------- */
+/*
+ * Debugging helpers
+ */
 
 static void debug_print_image_info(struct image_t *img, uint16_t cols, uint16_t rows)
 {
@@ -285,40 +289,11 @@ static void debug_print_image_info(struct image_t *img, uint16_t cols, uint16_t 
     return;
   }
 
-  GS_PRINT("phys_w=%u phys_h=%u | logical_w=%u logical_h=%u | down_x=%u down_y=%u | cols=%u rows=%u\n",
+  GS_PRINT("phys=%ux%u logical=%ux%u down=%ux%u grid=%ux%u\n",
            img->w, img->h,
            logical_width(img), logical_height(img),
            ground_downsize_x, ground_downsize_y,
            cols, rows);
-}
-
-static void debug_print_raw_samples(struct image_t *img)
-{
-  if (!should_print_debug()) {
-    return;
-  }
-
-  uint16_t lw = logical_width(img);
-  uint16_t lh = logical_height(img);
-
-  uint16_t y_test  = lh / 2U;
-  uint16_t x_left  = lw / 6U;
-  uint16_t x_mid   = lw / 2U;
-  uint16_t x_right = (uint16_t)((5U * lw) / 6U);
-
-  uint8_t Y, U, V;
-
-  get_yuv422_pixel(img, x_left, y_test, &Y, &U, &V);
-  GS_PRINT("RAW LEFT  x=%u y=%u | Y=%u U=%u V=%u | ground=%d\n",
-           x_left, y_test, Y, U, V, is_ground_yuv(Y, U, V));
-
-  get_yuv422_pixel(img, x_mid, y_test, &Y, &U, &V);
-  GS_PRINT("RAW MID   x=%u y=%u | Y=%u U=%u V=%u | ground=%d\n",
-           x_mid, y_test, Y, U, V, is_ground_yuv(Y, U, V));
-
-  get_yuv422_pixel(img, x_right, y_test, &Y, &U, &V);
-  GS_PRINT("RAW RIGHT x=%u y=%u | Y=%u U=%u V=%u | ground=%d\n",
-           x_right, y_test, Y, U, V, is_ground_yuv(Y, U, V));
 }
 
 static void debug_print_map_counts(uint16_t cols, uint16_t rows)
@@ -348,28 +323,7 @@ static void debug_print_map_counts(uint16_t cols, uint16_t rows)
     }
   }
 
-  GS_PRINT("MAP | L=%u C=%u R=%u\n", left, center, right);
-
-  if (cols >= 6U) {
-    uint16_t band_w = cols / 6U;
-    fprintf(stderr, "[cv_ground_seg->%s()] MAP BANDS:", __FUNCTION__);
-    for (uint16_t b = 0U; b < 6U; b++) {
-      uint16_t start = (uint16_t)(b * band_w);
-      uint16_t end   = (b == 5U) ? cols : (uint16_t)((b + 1U) * band_w);
-      uint32_t count = 0U;
-
-      for (uint16_t r = 0U; r < rows; r++) {
-        for (uint16_t c = start; c < end; c++) {
-          if (ground_small[r][c] != 0U) {
-            count++;
-          }
-        }
-      }
-
-      fprintf(stderr, " b%u=%u", b, count);
-    }
-    fprintf(stderr, "\n");
-  }
+  GS_PRINT("map L=%u C=%u R=%u\n", left, center, right);
 }
 
 static void debug_print_horizon_samples(const struct ground_seg_result_t *res)
@@ -378,13 +332,16 @@ static void debug_print_horizon_samples(const struct ground_seg_result_t *res)
     return;
   }
 
-  GS_PRINT("HORIZON samples:");
+  fprintf(stderr, "[cv_ground_seg->%s()] horizon:", __FUNCTION__);
+
   for (uint16_t c = 0U; c < res->cols; c += 10U) {
     fprintf(stderr, " h[%u]=%u", c, res->horizon[c]);
   }
 
   if (((res->cols - 1U) % 10U) != 0U) {
-    fprintf(stderr, " h[%u]=%u", res->cols - 1U, res->horizon[res->cols - 1U]);
+    fprintf(stderr, " h[%u]=%u",
+            res->cols - 1U,
+            res->horizon[res->cols - 1U]);
   }
 
   fprintf(stderr, "\n");
@@ -418,7 +375,11 @@ static void build_ground_map(struct image_t *img, uint16_t cols, uint16_t rows)
 
       uint16_t xc = clamp_u16((uint16_t)(x0 + block_w / 2U), 0U, (uint16_t)(lw - 1U));
       uint16_t yc = clamp_u16((uint16_t)(y0 + block_h / 2U), 0U, (uint16_t)(lh - 1U));
-      draw_classified_pixel(img, xc, yc, ground_small[r][c] != 0U);
+      if (ground_draw_big) {
+        draw_classified_marker(img, xc, yc, ground_small[r][c] != 0U);
+      } else {
+        draw_classified_pixel(img, xc, yc, ground_small[r][c] != 0U);
+      }   
     }
   }
 }
@@ -511,8 +472,8 @@ static void compute_obstacle_flag(struct ground_seg_result_t *res)
       open_cols++;
     }
   }
-
-  if (total > 0U && open_cols + 1U < total) {
+  
+  if (total > 0U && open_cols < (total - 3U)) {
     res->obstacle_ahead = true;
   }
 
@@ -596,7 +557,6 @@ static uint32_t ground_seg_analyse_image(struct image_t *img,
   res->rows = rows;
 
   debug_print_image_info(img, cols, rows);
-  debug_print_raw_samples(img);
 
   build_ground_map(img, cols, rows);
   debug_print_map_counts(cols, rows);

@@ -20,6 +20,8 @@ extern uint8_t ground_cr_max;
 /* Use tree instead of pure thresholds */
 extern bool ground_use_tree;
 
+extern bool ground_draw_big;
+
 /*
  * Segmentation settings
  *
