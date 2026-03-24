@@ -77,6 +77,8 @@ uint8_t ground_middle_cols = 10;
 
 bool ground_draw = true;
 
+
+
 /* Downsized binary classification map in LOGICAL rotated coordinates */
 static uint8_t ground_small[GS_MAX_ROWS][GS_MAX_COLS];
 static uint8_t carpet_small[GS_MAX_ROWS][GS_MAX_COLS];
@@ -253,6 +255,49 @@ static void draw_classified_pixel(struct image_t *img, uint16_t x, uint16_t y, b
     buffer[base + 1U] = Yv;
   } else {
     buffer[base + 3U] = Yv;
+  }
+}
+
+/*
+ * Visualize the dilated carpet/obstacle mask in magenta on the image
+ * This shows the spatial extent of dilated obstacles for RTP viewer debugging
+ */
+static void visualize_dilated_obstacles(struct image_t *img, uint16_t cols, uint16_t rows)
+{
+  if (!ground_draw || img == NULL || img->buf == NULL || img->w < 2U || img->h == 0U) {
+    return;
+  }
+
+  /* Draw dilated mask cells as magenta pixels */
+  for (uint16_t r = 0U; r < rows; r++) {
+    for (uint16_t c = 0U; c < cols; c++) {
+      if (ground_small[r][c] == 0U) {
+        /* Map block to logical image center */
+        uint16_t x_center = (uint16_t)(c * ground_downsize_x + ground_downsize_x / 2U);
+        uint16_t y_center = (uint16_t)(r * ground_downsize_y + ground_downsize_y / 2U);
+
+        uint16_t src_x, src_y;
+        logical_to_physical(img, x_center, y_center, &src_x, &src_y);
+
+        uint16_t x_pair = (uint16_t)(src_x & ~1U);
+        if (x_pair >= img->w - 1U) {
+          x_pair = (img->w >= 2U) ? (img->w - 2U) : 0U;
+        }
+
+        uint32_t base = (uint32_t)src_y * 2U * img->w + 2U * x_pair;
+        uint8_t *buffer = img->buf;
+
+        /* Bright magenta: U=150, V=180, Y=200 */
+        buffer[base]     = 150U;
+        buffer[base + 2] = 180U;
+
+        if ((src_x & 1U) == 0U) {
+          buffer[base + 1U] = 200U;
+        } else {
+          buffer[base + 3U] = 200U;
+        }
+      }
+    }
   }
 }
 
@@ -440,7 +485,7 @@ static void build_ground_map(struct image_t *img, uint16_t cols, uint16_t rows)
 
       uint16_t xc = clamp_u16((uint16_t)(x0 + block_w / 2U), 0U, (uint16_t)(lw - 1U));
       uint16_t yc = clamp_u16((uint16_t)(y0 + block_h / 2U), 0U, (uint16_t)(lh - 1U));
-      draw_classified_pixel(img, xc, yc, ground_small[r][c] != 0U);
+      // draw_classified_pixel(img, xc, yc, ground_small[r][c] != 0U);
     }
   }
 }
@@ -584,7 +629,95 @@ static void compute_centroid_and_ground_count(struct ground_seg_result_t *res)
 /* Finding Carpets Core Logic                             */
 /* -------------------------------------------------------------------------- */
 
-#define CARPET_EDGE_THRESHOLD 150U
+#define CARPET_EDGE_THRESHOLD 90U
+uint8_t dilation_iterations = 2;
+
+static void dilate_obstacles(uint16_t cols, uint16_t rows, uint8_t iterations)
+{
+  for (uint8_t iter = 0U; iter < iterations; iter++) {
+    /* Create a copy of ground_small to read from */
+    uint8_t ground_temp[GS_MAX_ROWS][GS_MAX_COLS];
+    memcpy(ground_temp, ground_small, sizeof(ground_small));
+
+    /* Apply dilation: if a block is marked (0=obstacle), mark its neighbors */
+    for (uint16_t r = 0U; r < rows; r++) {
+      for (uint16_t c = 0U; c < cols; c++) {
+        if (ground_temp[r][c] == 0U) {
+          /* Mark all 8 neighbors */
+          if (c > 0U) {
+            ground_small[r][c - 1U] = 0U;  /* Left */
+          }
+          if (c < cols - 1U) {
+            ground_small[r][c + 1U] = 0U;  /* Right */
+          }
+          if (r > 0U) {
+            ground_small[r - 1U][c] = 0U;  /* Up */
+          }
+          if (r < rows - 1U) {
+            ground_small[r + 1U][c] = 0U;  /* Down */
+          }
+          /* Diagonals */
+          if (r > 0U && c > 0U) {
+            ground_small[r - 1U][c - 1U] = 0U;
+          }
+          if (r > 0U && c < cols - 1U) {
+            ground_small[r - 1U][c + 1U] = 0U;
+          }
+          if (r < rows - 1U && c > 0U) {
+            ground_small[r + 1U][c - 1U] = 0U;
+          }
+          if (r < rows - 1U && c < cols - 1U) {
+            ground_small[r + 1U][c + 1U] = 0U;
+          }
+        }
+      }
+    }
+  }
+}
+
+static void dilate_carpets(uint16_t cols, uint16_t rows, uint8_t iterations)
+{
+  for (uint8_t iter = 0U; iter < iterations; iter++) {
+    /* Create a copy of carpet_small to read from */
+    uint8_t carpet_temp[GS_MAX_ROWS][GS_MAX_COLS];
+    memcpy(carpet_temp, carpet_small, sizeof(carpet_small));
+
+    /* Apply dilation: if a block is marked (0=obstacle), mark its neighbors */
+    for (uint16_t r = 0U; r < rows; r++) {
+      for (uint16_t c = 0U; c < cols; c++) {
+        if (carpet_temp[r][c] == 1U) {
+          /* Mark all 8 neighbors */
+          if (c > 0U) {
+            carpet_small[r][c - 1U] = 1U;  /* Left */
+          }
+          if (c < cols - 1U) {
+            carpet_small[r][c + 1U] = 1U;  /* Right */
+          }
+          if (r > 0U) {
+            carpet_small[r - 1U][c] = 1U;  /* Up */
+          }
+          if (r < rows - 1U) {
+            carpet_small[r + 1U][c] = 1U;  /* Down */
+          }
+          /* Diagonals */
+          if (r > 0U && c > 0U) {
+            carpet_small[r - 1U][c - 1U] = 1U;
+          }
+          if (r > 0U && c < cols - 1U) {
+            carpet_small[r - 1U][c + 1U] = 1U;
+          }
+          if (r < rows - 1U && c > 0U) {
+            carpet_small[r + 1U][c - 1U] = 1U;
+          }
+          if (r < rows - 1U && c < cols - 1U) {
+            carpet_small[r + 1U][c + 1U] = 1U;
+          }
+        }
+      }
+    }
+  }
+}
+
 
 static void find_carpet(struct image_t *img, uint16_t cols, uint16_t rows)
 {
@@ -679,11 +812,14 @@ static uint32_t ground_seg_analyse_image(struct image_t *img,
 
   // Create carpet mask
   find_carpet(img, cols, rows);
+  // dilate_carpets(cols, rows, dilation_iterations);
 
   debug_print_image_info(img, cols, rows);
   debug_print_raw_samples(img);
 
   build_ground_map(img, cols, rows);
+  // dilate_obstacles(cols, rows, dilation_iterations);
+
   debug_print_map_counts(cols, rows);
 
   // Combining the masks
@@ -692,6 +828,11 @@ static uint32_t ground_seg_analyse_image(struct image_t *img,
       ground_small[r][c] = ground_small[r][c] | carpet_small[r][c];
     }
   }
+
+  dilate_obstacles(cols, rows, dilation_iterations);
+
+  /* Visualize the dilated carpet mask in the RTP viewer */
+  visualize_dilated_obstacles(img, cols, rows);
 
   compute_horizon(res);
   debug_print_horizon_samples(res);
