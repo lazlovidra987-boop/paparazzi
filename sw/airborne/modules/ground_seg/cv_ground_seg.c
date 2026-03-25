@@ -70,6 +70,13 @@ uint8_t ground_cb_max  = 120;
 uint8_t ground_cr_min  = 50;
 uint8_t ground_cr_max  = 140;
 
+uint8_t tree_lum_min = 50;
+uint8_t tree_lum_max = 150;
+uint8_t tree_cb_min  = 70;
+uint8_t tree_cb_max  = 120;
+uint8_t tree_cr_min  = 50;
+uint8_t tree_cr_max  = 140;
+
 uint8_t ground_downsize_x  = 4;
 uint8_t ground_downsize_y  = 4;
 uint8_t ground_min_black   = 5;
@@ -82,6 +89,7 @@ bool ground_draw = true;
 /* Downsized binary classification map in LOGICAL rotated coordinates */
 static uint8_t ground_small[GS_MAX_ROWS][GS_MAX_COLS];
 static uint8_t carpet_small[GS_MAX_ROWS][GS_MAX_COLS];
+static uint8_t tree_small[GS_MAX_ROWS][GS_MAX_COLS];
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
@@ -222,6 +230,13 @@ static inline bool is_ground_yuv(uint8_t Y, uint8_t U, uint8_t V)
   return (Y >= ground_lum_min && Y <= ground_lum_max &&
           U >= ground_cb_min  && U <= ground_cb_max  &&
           V >= ground_cr_min  && V <= ground_cr_max);
+}
+
+static inline bool is_tree_yuv(uint8_t Y, uint8_t U, uint8_t V)
+{
+  return (Y >= tree_lum_min && Y <= tree_lum_max &&
+          U >= tree_cb_min  && U <= tree_cb_max  &&
+          V >= tree_cr_min  && V <= tree_cr_max);
 }
 
 /*
@@ -490,6 +505,72 @@ static void build_ground_map(struct image_t *img, uint16_t cols, uint16_t rows)
   }
 }
 
+static void build_tree_map(struct image_t *img, uint16_t cols, uint16_t rows)
+{
+  uint16_t lw = logical_width(img);
+  uint16_t lh = logical_height(img);
+
+  /* Only scan top third of the image for trees */
+  uint16_t top_third_rows = (rows + 2U) / 3U;  /* Round up division */
+
+  for (uint16_t r = 0U; r < top_third_rows; r++) {
+    for (uint16_t c = 0U; c < cols; c++) {
+      uint16_t x0 = (uint16_t)(c * ground_downsize_x);
+      uint16_t y0 = (uint16_t)(r * ground_downsize_y);
+
+      uint16_t block_w = ground_downsize_x;
+      uint16_t block_h = ground_downsize_y;
+
+      if (x0 >= lw) {
+        x0 = lw - 1U;
+      }
+      if (y0 >= lh) {
+        y0 = lh - 1U;
+      }
+
+      tree_small[r][c] = classify_block_vote(img, x0, y0, block_w, block_h);
+
+      uint16_t xc = clamp_u16((uint16_t)(x0 + block_w / 2U), 0U, (uint16_t)(lw - 1U));
+      uint16_t yc = clamp_u16((uint16_t)(y0 + block_h / 2U), 0U, (uint16_t)(lh - 1U));
+
+  //     /* Classify block as tree using same voting logic */
+  //     uint16_t x1 = (uint16_t)(x0 + block_w - 1U);
+  //     uint16_t y1 = (uint16_t)(y0 + block_h - 1U);
+
+  //     if (x1 >= lw) {
+  //       x1 = lw - 1U;
+  //     }
+  //     if (y1 >= lh) {
+  //       y1 = lh - 1U;
+  //     }
+
+  //     uint16_t xc = (uint16_t)((x0 + x1) / 2U);
+  //     uint16_t yc = (uint16_t)((y0 + y1) / 2U);
+
+  //     uint16_t xl = (uint16_t)((x0 + xc) / 2U);
+  //     uint16_t xr = (uint16_t)((xc + x1) / 2U);
+  //     uint16_t yu = (uint16_t)((y0 + yc) / 2U);
+  //     uint16_t yd = (uint16_t)((yc + y1) / 2U);
+
+  //     uint16_t sample_x[5] = { xc, xl, xr, xc, xc };
+  //     uint16_t sample_y[5] = { yc, yc, yc, yu, yd };
+
+  //     uint8_t hits = 0U;
+
+  //     for (uint8_t i = 0U; i < 5U; i++) {
+  //       uint8_t Y, U, V;
+  //       get_yuv422_pixel(img, sample_x[i], sample_y[i], &Y, &U, &V);
+  //       if (is_tree_yuv(Y, U, V)) {
+  //         hits++;
+  //       }
+  //     }
+
+  //     /* Mark as tree (0=obstacle) if majority of samples match tree color, else no tree (1) */
+  //     tree_small[r][c] = (hits >= 3U) ? 0U : 1U;  /* 0=tree (obstacle), 1=not tree */
+    }
+  }
+}
+
 static void compute_horizon(struct ground_seg_result_t *res)
 {
   uint16_t cols = res->cols;
@@ -626,12 +707,90 @@ static void compute_centroid_and_ground_count(struct ground_seg_result_t *res)
 }
 
 /* -------------------------------------------------------------------------- */
+/* Image Padding Helper                                                       */
+/* -------------------------------------------------------------------------- */
+
+/* Padded image buffer: original + 2 pixels padding on each dimension */
+#define GS_PADDED_MAX_SIZE (2048 * 1024)  /* 2 MiB for padded YUV422 data */
+static uint8_t padded_image_buffer[GS_PADDED_MAX_SIZE];
+static struct image_t padded_image_struct;
+
+static bool pad_image_with_edge_replication(const struct image_t *orig_img, 
+                                            struct image_t *padded_img)
+{
+  if (orig_img == NULL || orig_img->buf == NULL || padded_img == NULL) {
+    return false;
+  }
+
+  uint16_t orig_w = orig_img->w;
+  uint16_t orig_h = orig_img->h;
+  uint16_t pad_w = orig_w + 2U;
+  uint16_t pad_h = orig_h + 2U;
+
+  /* YUV422 format: 2 bytes per pixel on average (U Y V Y) */
+  uint32_t padded_size = (uint32_t)pad_w * pad_h * 2U;
+  if (padded_size > GS_PADDED_MAX_SIZE) {
+    GS_PRINT("ERROR: Padded buffer too large (%u > %u bytes)\n", 
+             padded_size, GS_PADDED_MAX_SIZE);
+    return false;
+  }
+
+  /* Initialize padded image struct */
+  memset(padded_img, 0, sizeof(*padded_img));
+  padded_img->buf = padded_image_buffer;
+  padded_img->w = pad_w;
+  padded_img->h = pad_h;
+  padded_img->type = orig_img->type;
+
+  /* 
+   * Copy original image to center of padded buffer with 1-pixel edge replication.
+   * In the padded image:
+   *   - Row 0: replicated from orig row 0
+   *   - Rows 1..orig_h: from orig rows 0..orig_h-1
+   *   - Row orig_h+1: replicated from orig row orig_h-1
+   *   - Similarly for columns
+   */
+
+  for (uint16_t y = 0U; y < pad_h; y++) {
+    for (uint16_t x = 0U; x < pad_w; x++) {
+      /* Map padded coordinates to original coordinates with edge replication */
+      uint16_t orig_x = (x == 0U) ? 0U : (x == pad_w - 1U) ? (orig_w - 1U) : (x - 1U);
+      uint16_t orig_y = (y == 0U) ? 0U : (y == pad_h - 1U) ? (orig_h - 1U) : (y - 1U);
+
+      /* Read from original image */
+      uint8_t Y, U, V;
+      get_yuv422_pixel((struct image_t *)orig_img, orig_x, orig_y, &Y, &U, &V);
+
+      /* Write to padded buffer using physical coordinates */
+      uint16_t x_pair = (x & ~1U);
+      if (x_pair >= pad_w - 1U) {
+        x_pair = (pad_w >= 2U) ? (pad_w - 2U) : 0U;
+      }
+
+      uint32_t base = (uint32_t)y * 2U * pad_w + 2U * x_pair;
+      
+      padded_image_buffer[base]     = U;
+      padded_image_buffer[base + 2U] = V;
+
+      if ((x & 1U) == 0U) {
+        padded_image_buffer[base + 1U] = Y;
+      } else {
+        padded_image_buffer[base + 3U] = Y;
+      }
+    }
+  }
+
+  return true;
+}
+
+/* -------------------------------------------------------------------------- */
 /* Finding Carpets Core Logic                             */
 /* -------------------------------------------------------------------------- */
 
-#define CARPET_EDGE_THRESHOLD 90U
+#define CARPET_EDGE_THRESHOLD 150U
 uint8_t dilation_iterations = 2;
 uint8_t correction_iterations = 3;
+uint8_t erode_again_iterations = 5;
 
 static void dilate_obstacles(uint16_t cols, uint16_t rows, uint8_t iterations)
 {
@@ -714,12 +873,50 @@ static void correct_carpets(uint16_t cols, uint16_t rows, uint8_t iterations)
   }
 }
 
+static void correct_carpets_again(uint16_t cols, uint16_t rows, uint8_t iterations)
+{
+ /* Define qué consideramos "suficientemente rodeado". 
+   * 5 significa que al menos 5 de las 8 celdas vecinas deben ser 1. */
+  const uint8_t THRESHOLD = 5U; 
+
+  for (uint8_t iter = 0U; iter < iterations; iter++) {
+    /* Crear una copia para lectura y evitar modificar la matriz mientras la evaluamos */
+    uint8_t carpet_temp[GS_MAX_ROWS][GS_MAX_COLS];
+    memcpy(carpet_temp, carpet_small, sizeof(carpet_small));
+
+    for (uint16_t r = 0U; r < rows; r++) {
+      for (uint16_t c = 0U; c < cols; c++) {
+        
+        /* Evaluar solo las celdas que son 0 */
+        if (carpet_temp[r][c] == 1U) {
+          uint8_t count_ones = 0U;
+
+          /* Contar los vecinos en las 8 direcciones */
+          if (c > 0U && carpet_temp[r][c - 1U] == 0U) count_ones++;                 /* Izquierda */
+          if (c < cols - 1U && carpet_temp[r][c + 1U] == 0U) count_ones++;          /* Derecha */
+          if (r > 0U && carpet_temp[r - 1U][c] == 0U) count_ones++;                 /* Arriba */
+          if (r < rows - 1U && carpet_temp[r + 1U][c] == 0U) count_ones++;          /* Abajo */
+          if (r > 0U && c > 0U && carpet_temp[r - 1U][c - 1U] == 0U) count_ones++;  /* Arriba-Izquierda */
+          if (r > 0U && c < cols - 1U && carpet_temp[r - 1U][c + 1U] == 0U) count_ones++; /* Arriba-Derecha */
+          if (r < rows - 1U && c > 0U && carpet_temp[r + 1U][c - 1U] == 0U) count_ones++; /* Abajo-Izquierda */
+          if (r < rows - 1U && c < cols - 1U && carpet_temp[r + 1U][c + 1U] == 0U) count_ones++; /* Abajo-Derecha */
+
+          /* Si la celda 0 está suficientemente rodeada de 1s, se convierte en 1 */
+          if (count_ones >= THRESHOLD) {
+            carpet_small[r][c] = 0U;
+          }
+        }
+      }
+    }
+  }
+}
 
 static void find_carpet(struct image_t *img, uint16_t cols, uint16_t rows)
 {
   /* 1. Limpiamos la matriz global de alfombras por si quedó algo del fotograma anterior */
   memset(carpet_small, 0, sizeof(carpet_small));
 
+  // uint16_t row_start = (uint16_t)((2U * rows) / 3U);
   uint16_t row_start = (uint16_t)((2U * rows) / 3U);
   /* 2. Recorremos la cuadrícula matemática (igual que build_ground_map) */
   for (uint16_t r = row_start; r < rows; r++) {
@@ -728,19 +925,21 @@ static void find_carpet(struct image_t *img, uint16_t cols, uint16_t rows)
       uint16_t x0 = (uint16_t)(c * ground_downsize_x);
       uint16_t y0 = (uint16_t)(r * ground_downsize_y);
 
-      /* Margen de seguridad: El filtro lee píxeles vecinos, así que 
-         no podemos analizar los píxeles que están pegados al mismísimo borde de la foto */
-      if (x0 < 1U || y0 < 1U || 
-          x0 >= logical_width(img) - ground_downsize_x - 1U || 
-          y0 >= logical_height(img) - ground_downsize_y - 1U) {
-        continue; /* Saltamos al siguiente bloque */
+      /* With image padding, we can now process blocks at the edges.
+         The safety margin that was needed for the original image is now 
+         handled by the padded pixels. */
+      uint16_t max_x = logical_width(img);
+      uint16_t max_y = logical_height(img);
+      
+      if (x0 >= max_x || y0 >= max_y) {
+        continue; /* Only skip if completely out of bounds */
       }
 
       uint32_t total_edge_magnitude = 0U;
 
       /* 3. Escaneamos los píxeles DENTRO de este bloque específico */
-      for (uint16_t y = y0; y < y0 + ground_downsize_y; y++) {
-        for (uint16_t x = x0; x < x0 + ground_downsize_x; x++) {
+      for (uint16_t y = y0; y < y0 + ground_downsize_y && y < max_y; y++) {
+        for (uint16_t x = x0; x < x0 + ground_downsize_x && x < max_x; x++) {
           
           uint8_t Y_left, Y_right, Y_up, Y_down, U, V;
 
@@ -806,22 +1005,42 @@ static uint32_t ground_seg_analyse_image(struct image_t *img,
   res->cols = cols;
   res->rows = rows;
 
-  // Create carpet mask
+  // // Create carpet mask with padded image to cover full extent including borders
+  // struct image_t *carpet_img = img;
+  // if (pad_image_with_edge_replication(img, &padded_image_struct)) {
+  //   carpet_img = &padded_image_struct;
+  //   GS_PRINT("Using padded image (%ux%u) for carpet detection\n", 
+  //            padded_image_struct.w, padded_image_struct.h);
+  // } else {
+  //   GS_PRINT("Padding failed, using original image for carpet detection\n");
+  // }
+  
   find_carpet(img, cols, rows);
   correct_carpets(cols, rows, correction_iterations);
+  correct_carpets_again(cols, rows, erode_again_iterations);
 
   debug_print_image_info(img, cols, rows);
   debug_print_raw_samples(img);
 
   build_ground_map(img, cols, rows);
+  build_tree_map(img, cols, rows);
   // dilate_obstacles(cols, rows, dilation_iterations);
 
   debug_print_map_counts(cols, rows);
 
-  // Combining the masks
+  // uint16_t top_third_rows = (rows + 2U) / 3U;
+
   for (uint16_t r = 0U; r < rows; r++) {
     for (uint16_t c = 0U; c < cols; c++) {
       ground_small[r][c] = ground_small[r][c] | carpet_small[r][c];
+      ground_small[r][c] = ground_small[r][c] | tree_small[r][c];
+
+      /* In top third: apply AND with tree detection (conservative).
+         If tree detected (tree_small=0), mark as obstacle regardless of ground status.
+         In bottom 2/3: no tree check needed (tree_small is all 1s) */
+      // if (r < top_third_rows) {
+      //   ground_small[r][c] = ground_small[r][c] & tree_small[r][c];
+      // }
     }
   }
 
