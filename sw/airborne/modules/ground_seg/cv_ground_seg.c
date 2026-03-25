@@ -631,6 +631,7 @@ static void compute_centroid_and_ground_count(struct ground_seg_result_t *res)
 
 #define CARPET_EDGE_THRESHOLD 90U
 uint8_t dilation_iterations = 2;
+uint8_t correction_iterations = 3;
 
 static void dilate_obstacles(uint16_t cols, uint16_t rows, uint8_t iterations)
 {
@@ -675,42 +676,37 @@ static void dilate_obstacles(uint16_t cols, uint16_t rows, uint8_t iterations)
   }
 }
 
-static void dilate_carpets(uint16_t cols, uint16_t rows, uint8_t iterations)
+static void correct_carpets(uint16_t cols, uint16_t rows, uint8_t iterations)
 {
+ /* Define qué consideramos "suficientemente rodeado". 
+   * 5 significa que al menos 5 de las 8 celdas vecinas deben ser 1. */
+  const uint8_t THRESHOLD = 5U; 
+
   for (uint8_t iter = 0U; iter < iterations; iter++) {
-    /* Create a copy of carpet_small to read from */
+    /* Crear una copia para lectura y evitar modificar la matriz mientras la evaluamos */
     uint8_t carpet_temp[GS_MAX_ROWS][GS_MAX_COLS];
     memcpy(carpet_temp, carpet_small, sizeof(carpet_small));
 
-    /* Apply dilation: if a block is marked (0=obstacle), mark its neighbors */
     for (uint16_t r = 0U; r < rows; r++) {
       for (uint16_t c = 0U; c < cols; c++) {
-        if (carpet_temp[r][c] == 1U) {
-          /* Mark all 8 neighbors */
-          if (c > 0U) {
-            carpet_small[r][c - 1U] = 1U;  /* Left */
-          }
-          if (c < cols - 1U) {
-            carpet_small[r][c + 1U] = 1U;  /* Right */
-          }
-          if (r > 0U) {
-            carpet_small[r - 1U][c] = 1U;  /* Up */
-          }
-          if (r < rows - 1U) {
-            carpet_small[r + 1U][c] = 1U;  /* Down */
-          }
-          /* Diagonals */
-          if (r > 0U && c > 0U) {
-            carpet_small[r - 1U][c - 1U] = 1U;
-          }
-          if (r > 0U && c < cols - 1U) {
-            carpet_small[r - 1U][c + 1U] = 1U;
-          }
-          if (r < rows - 1U && c > 0U) {
-            carpet_small[r + 1U][c - 1U] = 1U;
-          }
-          if (r < rows - 1U && c < cols - 1U) {
-            carpet_small[r + 1U][c + 1U] = 1U;
+        
+        /* Evaluar solo las celdas que son 0 */
+        if (carpet_temp[r][c] == 0U) {
+          uint8_t count_ones = 0U;
+
+          /* Contar los vecinos en las 8 direcciones */
+          if (c > 0U && carpet_temp[r][c - 1U] == 1U) count_ones++;                 /* Izquierda */
+          if (c < cols - 1U && carpet_temp[r][c + 1U] == 1U) count_ones++;          /* Derecha */
+          if (r > 0U && carpet_temp[r - 1U][c] == 1U) count_ones++;                 /* Arriba */
+          if (r < rows - 1U && carpet_temp[r + 1U][c] == 1U) count_ones++;          /* Abajo */
+          if (r > 0U && c > 0U && carpet_temp[r - 1U][c - 1U] == 1U) count_ones++;  /* Arriba-Izquierda */
+          if (r > 0U && c < cols - 1U && carpet_temp[r - 1U][c + 1U] == 1U) count_ones++; /* Arriba-Derecha */
+          if (r < rows - 1U && c > 0U && carpet_temp[r + 1U][c - 1U] == 1U) count_ones++; /* Abajo-Izquierda */
+          if (r < rows - 1U && c < cols - 1U && carpet_temp[r + 1U][c + 1U] == 1U) count_ones++; /* Abajo-Derecha */
+
+          /* Si la celda 0 está suficientemente rodeada de 1s, se convierte en 1 */
+          if (count_ones >= THRESHOLD) {
+            carpet_small[r][c] = 1U;
           }
         }
       }
@@ -812,7 +808,7 @@ static uint32_t ground_seg_analyse_image(struct image_t *img,
 
   // Create carpet mask
   find_carpet(img, cols, rows);
-  // dilate_carpets(cols, rows, dilation_iterations);
+  correct_carpets(cols, rows, correction_iterations);
 
   debug_print_image_info(img, cols, rows);
   debug_print_raw_samples(img);
