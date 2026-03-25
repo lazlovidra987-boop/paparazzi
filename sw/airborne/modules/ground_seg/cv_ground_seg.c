@@ -168,11 +168,9 @@ static inline void get_yuv422_pixel(struct image_t *img, uint16_t x, uint16_t y,
 static inline bool is_ground_yuv(uint8_t Y, uint8_t U, uint8_t V)
 {
   if (ground_use_tree) {
-    /* Decision tree classifier */
-    return (U <= 115U && V <= 145U);
+    return (U <= 103U) && (V <= 155U) && (Y > 82U);
   }
 
-  /* Original threshold box */
   return (Y >= ground_lum_min && Y <= ground_lum_max &&
           U >= ground_cb_min  && U <= ground_cb_max  &&
           V >= ground_cr_min  && V <= ground_cr_max);
