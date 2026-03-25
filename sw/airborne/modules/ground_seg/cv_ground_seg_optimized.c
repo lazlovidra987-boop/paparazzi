@@ -94,25 +94,9 @@ static uint8_t tree_small[GS_MAX_ROWS][GS_MAX_COLS];
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
 
-static inline bool should_print_debug(void)
-{
-  return (gs_frame_counter % GS_DEBUG_EVERY_N_FRAMES) == 0U;
-}
-
 static void reset_result(struct ground_seg_result_t *res)
 {
   memset(res, 0, sizeof(*res));
-}
-
-static inline uint16_t clamp_u16(uint16_t v, uint16_t lo, uint16_t hi)
-{
-  if (v < lo) {
-    return lo;
-  }
-  if (v > hi) {
-    return hi;
-  }
-  return v;
 }
 
 /*
@@ -164,7 +148,7 @@ static inline void logical_to_physical(const struct image_t *img,
  *
  * Assumed physical buffer layout:
  *   U Y0 V Y1
- */
+*/ 
 static inline void get_yuv422_pixel(struct image_t *img, uint16_t x, uint16_t y,
                                     uint8_t *Y, uint8_t *U, uint8_t *V)
 {
@@ -196,34 +180,6 @@ static inline void get_yuv422_pixel(struct image_t *img, uint16_t x, uint16_t y,
   *Y = ((src_x & 1U) == 0U) ? y0 : y1;
 }
 
-static inline void set_yuv422_pixel(struct image_t *img, uint16_t x, uint16_t y,
-                                    uint8_t Y, uint8_t U, uint8_t V)
-{
-  if (img == NULL || img->buf == NULL || img->w < 2U || img->h == 0U) {
-    return;
-  }
-
-  uint16_t src_x, src_y;
-  logical_to_physical(img, x, y, &src_x, &src_y);
-
-  uint16_t x_pair = (uint16_t)(src_x & ~1U);
-  if (x_pair >= img->w - 1U) {
-    x_pair = (img->w >= 2U) ? (img->w - 2U) : 0U;
-  }
-
-  uint32_t base = (uint32_t)src_y * 2U * img->w + 2U * x_pair;
-  uint8_t *buffer = img->buf;
-
-  buffer[base] = U;
-  buffer[base + 2] = V;
-
-  if ((src_x & 1U) == 0U) {
-    buffer[base + 1U] = Y;
-  } else {
-    buffer[base + 3U] = Y;
-  }
-}
-
 static inline bool is_ground_yuv(uint8_t Y, uint8_t U, uint8_t V)
 {
   return (Y >= ground_lum_min && Y <= ground_lum_max &&
@@ -238,83 +194,6 @@ static inline bool is_tree_yuv(uint8_t Y, uint8_t U, uint8_t V)
           V >= tree_cr_min  && V <= tree_cr_max);
 }
 
-/*
- * Draw on the PHYSICAL image buffer, but using LOGICAL rotated coordinates.
- 
-static void draw_classified_pixel(struct image_t *img, uint16_t x, uint16_t y, bool is_ground)
-{
-  if (!ground_draw || img == NULL || img->buf == NULL || img->w < 2U || img->h == 0U) {
-    return;
-  }
-
-  uint16_t src_x, src_y;
-  logical_to_physical(img, x, y, &src_x, &src_y);
-
-  uint16_t x_pair = (uint16_t)(src_x & ~1U);
-  if (x_pair >= img->w - 1U) {
-    x_pair = (img->w >= 2U) ? (img->w - 2U) : 0U;
-  }
-
-  uint32_t base = (uint32_t)src_y * 2U * img->w + 2U * x_pair;
-  uint8_t *buffer = img->buf;
-
-  uint8_t Uv = is_ground ? 40U  : 128U;
-  uint8_t Yv = is_ground ? 150U : 60U;
-  uint8_t Vv = is_ground ? 20U  : 128U;
-
-  buffer[base]     = Uv;
-  buffer[base + 2] = Vv;
-
-  if ((src_x & 1U) == 0U) {
-    buffer[base + 1U] = Yv;
-  } else {
-    buffer[base + 3U] = Yv;
-  }
-}
-*/
-
-/*
- * Visualize the dilated carpet/obstacle mask in magenta on the image
- * This shows the spatial extent of dilated obstacles for RTP viewer debugging
- */
-static void visualize_dilated_obstacles(struct image_t *img, uint16_t cols, uint16_t rows)
-{
-  if (!ground_draw || img == NULL || img->buf == NULL || img->w < 2U || img->h == 0U) {
-    return;
-  }
-
-  /* Draw dilated mask cells as magenta pixels */
-  for (uint16_t r = 0U; r < rows; r++) {
-    for (uint16_t c = 0U; c < cols; c++) {
-      if (ground_small[r][c] == 1U) {
-        /* Map block to logical image center */
-        uint16_t x_center = (uint16_t)(c * ground_downsize_x + ground_downsize_x / 2U);
-        uint16_t y_center = (uint16_t)(r * ground_downsize_y + ground_downsize_y / 2U);
-
-        uint16_t src_x, src_y;
-        logical_to_physical(img, x_center, y_center, &src_x, &src_y);
-
-        uint16_t x_pair = (uint16_t)(src_x & ~1U);
-        if (x_pair >= img->w - 1U) {
-          x_pair = (img->w >= 2U) ? (img->w - 2U) : 0U;
-        }
-
-        uint32_t base = (uint32_t)src_y * 2U * img->w + 2U * x_pair;
-        uint8_t *buffer = img->buf;
-
-        /* Bright magenta: U=150, V=180, Y=200 */
-        buffer[base]     = 150U;
-        buffer[base + 2] = 180U;
-
-        if ((src_x & 1U) == 0U) {
-          buffer[base + 1U] = 200U;
-        } else {
-          buffer[base + 3U] = 200U;
-        }
-      }
-    }
-  }
-}
 
 static uint8_t classify_block_vote(struct image_t *img,
                                    uint16_t x0, uint16_t y0,
@@ -398,123 +277,6 @@ static uint8_t classify_block_vote_tree(struct image_t *img,
   return (hits >= 3U) ? 1U : 0U;
 }
 
-
-
-/* -------------------------------------------------------------------------- */
-/* Debug                                                                      */
-/* -------------------------------------------------------------------------- */
-
-static void debug_print_image_info(struct image_t *img, uint16_t cols, uint16_t rows)
-{
-  if (!should_print_debug()) {
-    return;
-  }
-
-  GS_PRINT("phys_w=%u phys_h=%u | logical_w=%u logical_h=%u | down_x=%u down_y=%u | cols=%u rows=%u\n",
-           img->w, img->h,
-           logical_width(img), logical_height(img),
-           ground_downsize_x, ground_downsize_y,
-           cols, rows);
-}
-
-static void debug_print_raw_samples(struct image_t *img)
-{
-  if (!should_print_debug()) {
-    return;
-  }
-
-  uint16_t lw = logical_width(img);
-  uint16_t lh = logical_height(img);
-
-  uint16_t y_test  = lh / 2U;
-  uint16_t x_left  = lw / 6U;
-  uint16_t x_mid   = lw / 2U;
-  uint16_t x_right = (uint16_t)((5U * lw) / 6U);
-
-  uint8_t Y, U, V;
-
-  get_yuv422_pixel(img, x_left, y_test, &Y, &U, &V);
-  GS_PRINT("RAW LEFT  x=%u y=%u | Y=%u U=%u V=%u | ground=%d\n",
-           x_left, y_test, Y, U, V, is_ground_yuv(Y, U, V));
-
-  get_yuv422_pixel(img, x_mid, y_test, &Y, &U, &V);
-  GS_PRINT("RAW MID   x=%u y=%u | Y=%u U=%u V=%u | ground=%d\n",
-           x_mid, y_test, Y, U, V, is_ground_yuv(Y, U, V));
-
-  get_yuv422_pixel(img, x_right, y_test, &Y, &U, &V);
-  GS_PRINT("RAW RIGHT x=%u y=%u | Y=%u U=%u V=%u | ground=%d\n",
-           x_right, y_test, Y, U, V, is_ground_yuv(Y, U, V));
-}
-
-static void debug_print_map_counts(uint16_t cols, uint16_t rows)
-{
-  if (!should_print_debug()) {
-    return;
-  }
-
-  uint32_t left = 0U;
-  uint32_t center = 0U;
-  uint32_t right = 0U;
-
-  uint16_t c1 = cols / 3U;
-  uint16_t c2 = (2U * cols) / 3U;
-
-  for (uint16_t r = 0U; r < rows; r++) {
-    for (uint16_t c = 0U; c < cols; c++) {
-      if (ground_small[r][c] != 0U) {
-        if (c < c1) {
-          left++;
-        } else if (c < c2) {
-          center++;
-        } else {
-          right++;
-        }
-      }
-    }
-  }
-
-  GS_PRINT("MAP | L=%u C=%u R=%u\n", left, center, right);
-
-  if (cols >= 6U) {
-    uint16_t band_w = cols / 6U;
-    fprintf(stderr, "[cv_ground_seg->%s()] MAP BANDS:", __FUNCTION__);
-    for (uint16_t b = 0U; b < 6U; b++) {
-      uint16_t start = (uint16_t)(b * band_w);
-      uint16_t end   = (b == 5U) ? cols : (uint16_t)((b + 1U) * band_w);
-      uint32_t count = 0U;
-
-      for (uint16_t r = 0U; r < rows; r++) {
-        for (uint16_t c = start; c < end; c++) {
-          if (ground_small[r][c] != 0U) {
-            count++;
-          }
-        }
-      }
-
-      fprintf(stderr, " b%u=%u", b, count);
-    }
-    fprintf(stderr, "\n");
-  }
-}
-
-static void debug_print_horizon_samples(const struct ground_seg_result_t *res)
-{
-  if (!should_print_debug() || res->cols == 0U) {
-    return;
-  }
-
-  GS_PRINT("HORIZON samples:");
-  for (uint16_t c = 0U; c < res->cols; c += 10U) {
-    fprintf(stderr, " h[%u]=%u", c, res->horizon[c]);
-  }
-
-  if (((res->cols - 1U) % 10U) != 0U) {
-    fprintf(stderr, " h[%u]=%u", res->cols - 1U, res->horizon[res->cols - 1U]);
-  }
-
-  fprintf(stderr, "\n");
-}
-
 /* -------------------------------------------------------------------------- */
 /* Core processing                                                            */
 /* -------------------------------------------------------------------------- */
@@ -542,9 +304,6 @@ static void build_ground_map(struct image_t *img, uint16_t cols, uint16_t rows)
       ground_small[r][c] = classify_block_vote(img, x0, y0, block_w, block_h);
       tree_small[r][c] = classify_block_vote_tree(img, x0, y0, block_w, block_h);
 
-      //uint16_t xc = clamp_u16((uint16_t)(x0 + block_w / 2U), 0U, (uint16_t)(lw - 1U));
-      //uint16_t yc = clamp_u16((uint16_t)(y0 + block_h / 2U), 0U, (uint16_t)(lh - 1U));
-      // draw_classified_pixel(img, xc, yc, ground_small[r][c] != 0U);
     }
   }
 }
@@ -641,11 +400,6 @@ static void compute_obstacle_flag(struct ground_seg_result_t *res)
   if (total > 0U && open_cols + 1U < total) {
     res->obstacle_ahead = true;
   }
-
-  if (should_print_debug()) {
-    GS_PRINT("OBSTACLE CHECK | start=%u end=%u open=%u total=%u obstacle=%d\n",
-             start, end, open_cols, total, res->obstacle_ahead);
-  }
 }
 
 static void compute_centroid_and_ground_count(struct ground_seg_result_t *res)
@@ -684,84 +438,6 @@ static void compute_centroid_and_ground_count(struct ground_seg_result_t *res)
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* Image Padding Helper                                                       */
-/* -------------------------------------------------------------------------- */
-
-/* Padded image buffer: original + 2 pixels padding on each dimension */
-// #define GS_PADDED_MAX_SIZE (2048 * 1024)  /* 2 MiB for padded YUV422 data */
-// static uint8_t padded_image_buffer[GS_PADDED_MAX_SIZE];
-// static struct image_t padded_image_struct;
-
-/*
-static bool pad_image_with_edge_replication(const struct image_t *orig_img, 
-                                            struct image_t *padded_img)
-{
-  if (orig_img == NULL || orig_img->buf == NULL || padded_img == NULL) {
-    return false;
-  }
-
-  uint16_t orig_w = orig_img->w;
-  uint16_t orig_h = orig_img->h;
-  uint16_t pad_w = orig_w + 2U;
-  uint16_t pad_h = orig_h + 2U;
-
-  // YUV422 format: 2 bytes per pixel on average (U Y V Y) 
-  uint32_t padded_size = (uint32_t)pad_w * pad_h * 2U;
-  if (padded_size > GS_PADDED_MAX_SIZE) {
-    GS_PRINT("ERROR: Padded buffer too large (%u > %u bytes)\n", 
-             padded_size, GS_PADDED_MAX_SIZE);
-    return false;
-  }
-
-  // Initialize padded image struct 
-  memset(padded_img, 0, sizeof(*padded_img));
-  padded_img->buf = padded_image_buffer;
-  padded_img->w = pad_w;
-  padded_img->h = pad_h;
-  padded_img->type = orig_img->type;
-
-   
-   * Copy original image to center of padded buffer with 1-pixel edge replication.
-   * In the padded image:
-   *   - Row 0: replicated from orig row 0
-   *   - Rows 1..orig_h: from orig rows 0..orig_h-1
-   *   - Row orig_h+1: replicated from orig row orig_h-1
-   *   - Similarly for columns
-   
-  
-  for (uint16_t y = 0U; y < pad_h; y++) {
-    for (uint16_t x = 0U; x < pad_w; x++) {
-      // Map padded coordinates to original coordinates with edge replication 
-      uint16_t orig_x = (x == 0U) ? 0U : (x == pad_w - 1U) ? (orig_w - 1U) : (x - 1U);
-      uint16_t orig_y = (y == 0U) ? 0U : (y == pad_h - 1U) ? (orig_h - 1U) : (y - 1U);
-
-      // Read from original image 
-      uint8_t Y, U, V;
-      get_yuv422_pixel((struct image_t *)orig_img, orig_x, orig_y, &Y, &U, &V);
-
-      // Write to padded buffer using physical coordinates 
-      uint16_t x_pair = (x & ~1U);
-      if (x_pair >= pad_w - 1U) {
-        x_pair = (pad_w >= 2U) ? (pad_w - 2U) : 0U;
-      }
-
-      uint32_t base = (uint32_t)y * 2U * pad_w + 2U * x_pair;
-      
-      padded_image_buffer[base]     = U;
-      padded_image_buffer[base + 2U] = V;
-
-      if ((x & 1U) == 0U) {
-        padded_image_buffer[base + 1U] = Y;
-      } else {
-        padded_image_buffer[base + 3U] = Y;
-      }
-    }
-  }
-
-  return true;
-}
-*/
 
 /* -------------------------------------------------------------------------- */
 /* Finding Carpets Core Logic                             */
@@ -985,29 +661,11 @@ static uint32_t ground_seg_analyse_image(struct image_t *img,
   res->cols = cols;
   res->rows = rows;
 
-  // // Create carpet mask with padded image to cover full extent including borders
-  // struct image_t *carpet_img = img;
-  // if (pad_image_with_edge_replication(img, &padded_image_struct)) {
-  //   carpet_img = &padded_image_struct;
-  //   GS_PRINT("Using padded image (%ux%u) for carpet detection\n", 
-  //            padded_image_struct.w, padded_image_struct.h);
-  // } else {
-  //   GS_PRINT("Padding failed, using original image for carpet detection\n");
-  // }
-  
   find_carpet(img, cols, rows);
   correct_carpets(cols, rows, correction_iterations);
   correct_carpets_again(cols, rows, erode_again_iterations);
 
-  debug_print_image_info(img, cols, rows);
-  debug_print_raw_samples(img);
-
   build_ground_map(img, cols, rows);
-  // dilate_obstacles(cols, rows, dilation_iterations);
-
-  debug_print_map_counts(cols, rows);
-
-  // uint16_t top_third_rows = (rows + 2U) / 3U;
 
   for (uint16_t r = 0U; r < rows; r++) {
     for (uint16_t c = 0U; c < cols; c++) {
@@ -1018,11 +676,7 @@ static uint32_t ground_seg_analyse_image(struct image_t *img,
 
   dilate_obstacles(cols, rows, dilation_iterations);
 
-  /* Visualize the dilated carpet mask in the RTP viewer */
-  visualize_dilated_obstacles(img, cols, rows);
-
   compute_horizon(res);
-  debug_print_horizon_samples(res);
 
   compute_scores(res);
   compute_obstacle_flag(res);
@@ -1039,36 +693,6 @@ static struct image_t *ground_seg_process_image(struct image_t *img, uint8_t cam
 {
   (void)camera_id;
 
-  gs_frame_counter++;
-
-  /* Dump exactly one LOGICAL rotated raw frame for verification */
-  static bool dumped = false;
-
-  if (!dumped && img != NULL && img->buf != NULL) {
-    uint16_t lw = logical_width(img);
-    uint16_t lh = logical_height(img);
-
-    FILE *f = fopen("/tmp/frame.pgm", "wb");
-    if (f != NULL) {
-      fprintf(f, "P5\n%u %u\n255\n", lw, lh);
-
-      for (uint16_t y = 0U; y < lh; y++) {
-        for (uint16_t x = 0U; x < lw; x++) {
-          uint8_t Y, U, V;
-          get_yuv422_pixel(img, x, y, &Y, &U, &V);
-          fwrite(&Y, 1, 1, f);
-        }
-      }
-
-      fclose(f);
-      GS_PRINT("Saved rotated raw frame to /tmp/frame.pgm\n");
-    } else {
-      GS_PRINT("Failed to save raw frame\n");
-    }
-
-    dumped = true;
-  }
-
   struct ground_seg_result_t local_result;
   ground_seg_analyse_image(img, &local_result);
 
@@ -1076,15 +700,6 @@ static struct image_t *ground_seg_process_image(struct image_t *img, uint8_t cam
   memcpy(&ground_seg_shared.result, &local_result, sizeof(local_result));
   ground_seg_shared.updated = true;
   pthread_mutex_unlock(&ground_seg_mutex);
-
-  GS_PRINT("ground=%u | L=%u C=%u R=%u | obstacle=%d | x=%d y=%d\n",
-           local_result.ground_count,
-           local_result.left_score,
-           local_result.center_score,
-           local_result.right_score,
-           local_result.obstacle_ahead,
-           local_result.x_c,
-           local_result.y_c);
 
   return img;
 }
@@ -1106,7 +721,6 @@ void ground_segmentation_init(void)
                    0);
 #endif
 
-  GS_PRINT("Ground segmentation initialized\n");
 }
 
 void ground_segmentation_periodic(void)
@@ -1123,22 +737,6 @@ void ground_segmentation_periodic(void)
   if (!updated) {
     return;
   }
-
-  AbiSendMsgVISUAL_DETECTION(
-    COLOR_OBJECT_DETECTION1_ID,
-    local_result.x_c,
-    local_result.y_c,
-    0,
-    0,
-    local_result.ground_count,
-    local_result.obstacle_ahead ? 1 : 0
-  );
-
-  GS_PRINT("PERIODIC | L=%u C=%u R=%u | obstacle=%d\n",
-           local_result.left_score,
-           local_result.center_score,
-           local_result.right_score,
-           local_result.obstacle_ahead);
 }
 
 void ground_seg_get_result(struct ground_seg_result_t *out)

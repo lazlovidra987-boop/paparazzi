@@ -19,6 +19,12 @@
         <dl_setting var="ground_cb_max" min="0" step="1" max="255" shortname="u_max"/>
         <dl_setting var="ground_cr_min" min="0" step="1" max="255" shortname="v_min"/>
         <dl_setting var="ground_cr_max" min="0" step="1" max="255" shortname="v_max"/>
+        <dl_setting var="tree_lum_min" min="0" step="1" max="255" shortname="yTree_min"/>
+        <dl_setting var="tree_lum_max" min="0" step="1" max="255" shortname="yTree_max"/>
+        <dl_setting var="tree_cb_min" min="0" step="1" max="255" shortname="uTree_min"/>
+        <dl_setting var="tree_cb_max" min="0" step="1" max="255" shortname="uTree_max"/>
+        <dl_setting var="tree_cr_min" min="0" step="1" max="255" shortname="vTree_min"/>
+        <dl_setting var="tree_cr_max" min="0" step="1" max="255" shortname="vTree_max"/>
         <dl_setting var="ground_draw" min="0" step="1" max="1" values="False|True" shortname="draw"/>
       </dl_settings>
     </dl_settings>
@@ -36,6 +42,6 @@
   <periodic fun="ground_segmentation_periodic()" freq="50"/>
 
   <makefile target="ap|nps">
-    <file name="cv_ground_seg.c"/>
+    <file name="cv_ground_seg_optimized.c"/>
   </makefile>
 </module>

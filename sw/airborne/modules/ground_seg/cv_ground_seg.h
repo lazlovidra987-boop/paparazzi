@@ -17,6 +17,13 @@ extern uint8_t ground_cb_max;
 extern uint8_t ground_cr_min;
 extern uint8_t ground_cr_max;
 
+extern uint8_t tree_lum_min;
+extern uint8_t tree_lum_max;
+extern uint8_t tree_cb_min;
+extern uint8_t tree_cb_max;
+extern uint8_t tree_cr_min;
+extern uint8_t tree_cr_max;
+
 /*
  * Segmentation settings
  *
