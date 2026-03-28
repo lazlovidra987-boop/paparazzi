@@ -1,3 +1,12 @@
+/*
+This is the same module as cv_ground_seg.c but with 
+optimizations for faster processing. The XML is the same as cv_ground_seg.xml,
+so in order to run this version or the other a chnage in needed in that file.
+  <makefile target="ap|nps">
+    <file name="cv_ground_seg_optimized.c"/>
+  </makefile>
+*/
+
 #include "cv_ground_seg.h"
 #include "modules/computer_vision/cv.h"
 #include "modules/core/abi.h"
