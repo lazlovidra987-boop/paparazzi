@@ -817,33 +817,32 @@ static void dilate_obstacles(uint16_t cols, uint16_t rows, uint8_t iterations)
 
 static void correct_carpets(uint16_t cols, uint16_t rows, uint8_t iterations)
 {
- /* Define qué consideramos "suficientemente rodeado". 
-   * 5 significa que al menos 5 de las 8 celdas vecinas deben ser 1. */
+ /* Suficiently surrounded threshold. */
   const uint8_t THRESHOLD = 5U; 
 
   for (uint8_t iter = 0U; iter < iterations; iter++) {
-    /* Crear una copia para lectura y evitar modificar la matriz mientras la evaluamos */
+    /* Create a copy for reading and avoid modifying the matrix while evaluating it */
     uint8_t carpet_temp[GS_MAX_ROWS][GS_MAX_COLS];
     memcpy(carpet_temp, carpet_small, sizeof(carpet_small));
 
     for (uint16_t r = 0U; r < rows; r++) {
       for (uint16_t c = 0U; c < cols; c++) {
         
-        /* Evaluar solo las celdas que son 0 */
+        /* Evaluate only the cells that are 0 */
         if (carpet_temp[r][c] == 0U) {
           uint8_t count_ones = 0U;
 
-          /* Contar los vecinos en las 8 direcciones */
-          if (c > 0U && carpet_temp[r][c - 1U] == 1U) count_ones++;                 /* Izquierda */
-          if (c < cols - 1U && carpet_temp[r][c + 1U] == 1U) count_ones++;          /* Derecha */
-          if (r > 0U && carpet_temp[r - 1U][c] == 1U) count_ones++;                 /* Arriba */
-          if (r < rows - 1U && carpet_temp[r + 1U][c] == 1U) count_ones++;          /* Abajo */
-          if (r > 0U && c > 0U && carpet_temp[r - 1U][c - 1U] == 1U) count_ones++;  /* Arriba-Izquierda */
-          if (r > 0U && c < cols - 1U && carpet_temp[r - 1U][c + 1U] == 1U) count_ones++; /* Arriba-Derecha */
-          if (r < rows - 1U && c > 0U && carpet_temp[r + 1U][c - 1U] == 1U) count_ones++; /* Abajo-Izquierda */
-          if (r < rows - 1U && c < cols - 1U && carpet_temp[r + 1U][c + 1U] == 1U) count_ones++; /* Abajo-Derecha */
+          /* Count the neighbors in the 8 directions */
+          if (c > 0U && carpet_temp[r][c - 1U] == 1U) count_ones++;                 /* Left */
+          if (c < cols - 1U && carpet_temp[r][c + 1U] == 1U) count_ones++;          /* Right */
+          if (r > 0U && carpet_temp[r - 1U][c] == 1U) count_ones++;                 /* Up */
+          if (r < rows - 1U && carpet_temp[r + 1U][c] == 1U) count_ones++;          /* Down */
+          if (r > 0U && c > 0U && carpet_temp[r - 1U][c - 1U] == 1U) count_ones++;  /* Up-Left */
+          if (r > 0U && c < cols - 1U && carpet_temp[r - 1U][c + 1U] == 1U) count_ones++; /* Up-Right */
+          if (r < rows - 1U && c > 0U && carpet_temp[r + 1U][c - 1U] == 1U) count_ones++; /* Down-Left */
+          if (r < rows - 1U && c < cols - 1U && carpet_temp[r + 1U][c + 1U] == 1U) count_ones++; /* Down-Right */
 
-          /* Si la celda 0 está suficientemente rodeada de 1s, se convierte en 1 */
+          /* If the cell is sufficiently surrounded by 1s, convert it to 1 */
           if (count_ones >= THRESHOLD) {
             carpet_small[r][c] = 1U;
           }
@@ -855,33 +854,32 @@ static void correct_carpets(uint16_t cols, uint16_t rows, uint8_t iterations)
 
 static void correct_carpets_again(uint16_t cols, uint16_t rows, uint8_t iterations)
 {
- /* Define qué consideramos "suficientemente rodeado". 
-   * 5 significa que al menos 5 de las 8 celdas vecinas deben ser 1. */
+ /* Suficiently surrounded threshold. */
   const uint8_t THRESHOLD = 5U; 
 
   for (uint8_t iter = 0U; iter < iterations; iter++) {
-    /* Crear una copia para lectura y evitar modificar la matriz mientras la evaluamos */
+    /* Create a copy for reading and avoid modifying the matrix while evaluating it */
     uint8_t carpet_temp[GS_MAX_ROWS][GS_MAX_COLS];
     memcpy(carpet_temp, carpet_small, sizeof(carpet_small));
 
     for (uint16_t r = 0U; r < rows; r++) {
       for (uint16_t c = 0U; c < cols; c++) {
         
-        /* Evaluar solo las celdas que son 0 */
+        /* Evaluate only the cells that are 1 */
         if (carpet_temp[r][c] == 1U) {
           uint8_t count_ones = 0U;
 
-          /* Contar los vecinos en las 8 direcciones */
-          if (c > 0U && carpet_temp[r][c - 1U] == 0U) count_ones++;                 /* Izquierda */
-          if (c < cols - 1U && carpet_temp[r][c + 1U] == 0U) count_ones++;          /* Derecha */
-          if (r > 0U && carpet_temp[r - 1U][c] == 0U) count_ones++;                 /* Arriba */
-          if (r < rows - 1U && carpet_temp[r + 1U][c] == 0U) count_ones++;          /* Abajo */
-          if (r > 0U && c > 0U && carpet_temp[r - 1U][c - 1U] == 0U) count_ones++;  /* Arriba-Izquierda */
-          if (r > 0U && c < cols - 1U && carpet_temp[r - 1U][c + 1U] == 0U) count_ones++; /* Arriba-Derecha */
-          if (r < rows - 1U && c > 0U && carpet_temp[r + 1U][c - 1U] == 0U) count_ones++; /* Abajo-Izquierda */
-          if (r < rows - 1U && c < cols - 1U && carpet_temp[r + 1U][c + 1U] == 0U) count_ones++; /* Abajo-Derecha */
+          /* Count the neighbors in the 8 directions */
+          if (c > 0U && carpet_temp[r][c - 1U] == 0U) count_ones++;                 /* Left */
+          if (c < cols - 1U && carpet_temp[r][c + 1U] == 0U) count_ones++;          /* Right */
+          if (r > 0U && carpet_temp[r - 1U][c] == 0U) count_ones++;                 /* Up */
+          if (r < rows - 1U && carpet_temp[r + 1U][c] == 0U) count_ones++;          /* Down */
+          if (r > 0U && c > 0U && carpet_temp[r - 1U][c - 1U] == 0U) count_ones++;  /* Up-Left */
+          if (r > 0U && c < cols - 1U && carpet_temp[r - 1U][c + 1U] == 0U) count_ones++; /* Up-Right */
+          if (r < rows - 1U && c > 0U && carpet_temp[r + 1U][c - 1U] == 0U) count_ones++; /* Down-Left */
+          if (r < rows - 1U && c < cols - 1U && carpet_temp[r + 1U][c + 1U] == 0U) count_ones++; /* Down-Right */
 
-          /* Si la celda 0 está suficientemente rodeada de 1s, se convierte en 1 */
+          /* If the cell is sufficiently surrounded by 0s, convert it to 0 */
           if (count_ones >= THRESHOLD) {
             carpet_small[r][c] = 0U;
           }
@@ -893,21 +891,18 @@ static void correct_carpets_again(uint16_t cols, uint16_t rows, uint8_t iteratio
 
 static void find_carpet(struct image_t *img, uint16_t cols, uint16_t rows)
 {
-  /* 1. Limpiamos la matriz global de alfombras por si quedó algo del fotograma anterior */
+  /* Clear the global carpet matrix in case anything is left from the previous frame */
   memset(carpet_small, 0, sizeof(carpet_small));
 
   // uint16_t row_start = (uint16_t)((2U * rows) / 3U);
   uint16_t row_start = (uint16_t)((2U * rows) / 3U);
-  /* 2. Recorremos la cuadrícula matemática (igual que build_ground_map) */
+  /* 2. Scan the grid */
   for (uint16_t r = row_start; r < rows; r++) {
     for (uint16_t c = 0U; c < cols; c++) {
       
       uint16_t x0 = (uint16_t)(c * ground_downsize_x);
       uint16_t y0 = (uint16_t)(r * ground_downsize_y);
 
-      /* With image padding, we can now process blocks at the edges.
-         The safety margin that was needed for the original image is now 
-         handled by the padded pixels. */
       uint16_t max_x = logical_width(img);
       uint16_t max_y = logical_height(img);
       
@@ -917,33 +912,31 @@ static void find_carpet(struct image_t *img, uint16_t cols, uint16_t rows)
 
       uint32_t total_edge_magnitude = 0U;
 
-      /* 3. Escaneamos los píxeles DENTRO de este bloque específico */
+      /* 3. Scan the pixels INSIDE this specific block */
       for (uint16_t y = y0; y < y0 + ground_downsize_y && y < max_y; y++) {
         for (uint16_t x = x0; x < x0 + ground_downsize_x && x < max_x; x++) {
           
           uint8_t Y_left, Y_right, Y_up, Y_down, U, V;
 
-          /* Usamos la función nativa del dron para leer la Luminancia (Y) de los vecinos.
-             (Ignoramos U y V porque los bordes se detectan mejor en blanco y negro) */
+          /* Get YUV pixels from neighboring positions */
           get_yuv422_pixel(img, x - 1U, y, &Y_left,  &U, &V);
           get_yuv422_pixel(img, x + 1U, y, &Y_right, &U, &V);
           get_yuv422_pixel(img, x, y - 1U, &Y_up,    &U, &V);
           get_yuv422_pixel(img, x, y + 1U, &Y_down,  &U, &V);
 
-          /* 4. Aproximación rápida de gradiente (Gx y Gy) */
+          /* 4. Compute gradient approximation (Gx and Gy) */
           int16_t Gx = (int16_t)Y_right - (int16_t)Y_left;
           int16_t Gy = (int16_t)Y_down - (int16_t)Y_up;
 
-          /* La magnitud del borde es la suma absoluta de los cambios en X e Y */
+          /* The magnitude of the edge is the absolute sum of changes in X and Y */
           total_edge_magnitude += (uint32_t)(abs(Gx) + abs(Gy));
         }
       }
 
-      /* 5. Decisión binaria: ¿Este bloque tiene suficientes bordes para ser alfombra? */
+      /* 5. Make binary decision: Is this block sufficiently edged to be a carpet? */
       if (total_edge_magnitude > CARPET_EDGE_THRESHOLD) {
-        carpet_small[r][c] = 1U; /* ¡Es alfombra! */
+        carpet_small[r][c] = 1U; /* It's carpet */
       } 
-      // Nota: No hace falta poner = 0U porque ya hicimos el memset a cero arriba
     }
   }
 }
