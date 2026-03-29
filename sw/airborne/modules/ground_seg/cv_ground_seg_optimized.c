@@ -1,7 +1,7 @@
 /*
 This is the same module as cv_ground_seg.c but with 
 optimizations for faster processing. The XML is the same as cv_ground_seg.xml,
-so in order to run this version or the other a chnage in needed in that file.
+so in order to run this version or the other a change is needed in that file.
   <makefile target="ap|nps">
     <file name="cv_ground_seg_optimized.c"/>
   </makefile>
@@ -102,6 +102,10 @@ static inline uint16_t logical_height(const struct image_t *img)
   return img->w;
 }
 
+/**
+ * Extract YUV422 pixel components from image buffer.
+ * Handles paired chroma samples used in YUV422 format efficiently.
+ */
 static inline void get_yuv422_pixel_fast(const uint8_t *buf,
                                          uint16_t img_w,
                                          uint16_t src_x, uint16_t src_y,
@@ -117,6 +121,9 @@ static inline void get_yuv422_pixel_fast(const uint8_t *buf,
   *Y = ((src_x & 1U) == 0U) ? buf[base + 1U] : buf[base + 3U];
 }
 
+/**
+ * Check if pixel color matches ground classification thresholds.
+ */
 static inline bool is_ground_yuv(uint8_t Y, uint8_t U, uint8_t V)
 {
   return (Y >= ground_lum_min && Y <= ground_lum_max &&
@@ -124,6 +131,9 @@ static inline bool is_ground_yuv(uint8_t Y, uint8_t U, uint8_t V)
           V >= ground_cr_min  && V <= ground_cr_max);
 }
 
+/**
+ * Check if pixel color matches tree classification thresholds.
+ */
 static inline bool is_tree_yuv(uint8_t Y, uint8_t U, uint8_t V)
 {
   return (Y >= tree_lum_min && Y <= tree_lum_max &&
@@ -131,6 +141,10 @@ static inline bool is_tree_yuv(uint8_t Y, uint8_t U, uint8_t V)
           V >= tree_cr_min  && V <= tree_cr_max);
 }
 
+/**
+ * Classify a block by voting on 5 sample points (center, left, right, up, down).
+ * Sets class bits (1) if 3 or more samples match the color threshold.
+ */
 static void classify_block_vote_both(struct image_t *img,
                                      uint16_t x0, uint16_t y0,
                                      uint16_t block_w, uint16_t block_h,
@@ -182,6 +196,9 @@ static void classify_block_vote_both(struct image_t *img,
 /* Core processing                                                            */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Build ground and tree classification maps by sampling and voting on blocks.
+ */
 static void build_ground_map(struct image_t *img, uint16_t cols, uint16_t rows)
 {
   const uint16_t lw = logical_width(img);
@@ -203,17 +220,22 @@ static void build_ground_map(struct image_t *img, uint16_t cols, uint16_t rows)
   }
 }
 
+/**
+ * Compute horizon line for each column by finding the highest visible ground pixel.
+ * Fills small gaps (< ground_min_black rows) in ground detection to smooth horizon.
+ */
 static void compute_horizon(struct ground_seg_result_t *res)
 {
   const uint16_t cols = res->cols;
   const uint16_t rows = res->rows;
 
   for (uint16_t c = 0U; c < cols; c++) {
-    uint16_t black_run = 0U;
-    int16_t  highest_visible_ground = -1;
+    uint16_t black_run = 0U;  /* Count of consecutive non-ground rows */
+    int16_t  highest_visible_ground = -1;  /* Index of highest ground pixel in column */
 
     for (int16_t r = (int16_t)rows - 1; r >= 0; r--) {
       if (ground_small[r][c] != 0U) {
+        /* Fill small gaps with ground to smooth horizon */
         if (black_run > 0U && black_run < ground_min_black) {
           for (uint16_t k = 1U; k <= black_run; k++) {
             uint16_t rr = (uint16_t)(r + (int16_t)k);
@@ -236,10 +258,13 @@ static void compute_horizon(struct ground_seg_result_t *res)
   }
 }
 
+/**
+ * Compute directional ground scores: left, center, and right regions.
+ */
 static void compute_scores(struct ground_seg_result_t *res)
 {
-  const uint16_t c1 = res->cols / 3U;
-  const uint16_t c2 = (2U * res->cols) / 3U;
+  const uint16_t c1 = res->cols / 3U;  /* Boundary between left and center */
+  const uint16_t c2 = (2U * res->cols) / 3U;  /* Boundary between center and right */
 
   for (uint16_t c = 0U; c < res->cols; c++) {
     if (c < c1) {
@@ -252,12 +277,16 @@ static void compute_scores(struct ground_seg_result_t *res)
   }
 }
 
+/**
+ * Detect obstacles by checking if center region has blocked columns.
+ */
 static void compute_obstacle_flag(struct ground_seg_result_t *res)
 {
   res->obstacle_ahead = false;
 
   if (res->cols == 0U) { return; }
 
+  /* Define middle region width for obstacle detection */
   uint16_t middle_cols = ground_middle_cols;
   if (middle_cols == 0U)        { middle_cols = 1U; }
   if (middle_cols > res->cols)  { middle_cols = res->cols; }
@@ -265,12 +294,14 @@ static void compute_obstacle_flag(struct ground_seg_result_t *res)
   const uint16_t mid  = res->cols / 2U;
   const uint16_t half = middle_cols / 2U;
 
+  /* Center the middle region around image center */
   const uint16_t start = (mid > half) ? (uint16_t)(mid - half) : 0U;
   const uint16_t end   = (start + middle_cols < res->cols)
                          ? start + middle_cols
                          : res->cols;
   const uint16_t total = end - start;
 
+  /* Count columns with open path (horizon > 1) */
   uint16_t open_cols = 0U;
   for (uint16_t c = start; c < end; c++) {
     if (res->horizon[c] > 1U) { open_cols++; }
@@ -281,6 +312,9 @@ static void compute_obstacle_flag(struct ground_seg_result_t *res)
   }
 }
 
+/**
+ * Compute centroid position and total ground pixel count from horizon map.
+ */
 static void compute_centroid_and_ground_count(struct ground_seg_result_t *res)
 {
   uint32_t total = 0U;
@@ -321,6 +355,10 @@ uint8_t dilation_iterations    = 2;
 uint8_t correction_iterations  = 3;
 uint8_t erode_again_iterations = 5;
 
+/**
+ * Dilate (expand) obstacles by marking neighbors of non-ground regions as non-ground.
+ * Uses 8-connectivity (includes diagonals).
+ */
 static void dilate_obstacles(uint16_t cols, uint16_t rows, uint8_t iterations)
 {
   for (uint8_t iter = 0U; iter < iterations; iter++) {
@@ -344,6 +382,12 @@ static void dilate_obstacles(uint16_t cols, uint16_t rows, uint8_t iterations)
   }
 }
 
+/**
+ * Generic morphological filter: process cells with eval_val, count neighbors with count_val,
+ * flip to flip_val if neighbor count >= threshold. Used for dilation/erosion of carpet map.
+ * Parameters: eval_val = value to evaluate, count_val = neighbor value to count,
+ * flip_val = replacement value when threshold exceeded.
+ */
 static void correct_carpets_generic(uint16_t cols, uint16_t rows,
                                     uint8_t iterations,
                                     uint8_t eval_val,
@@ -378,6 +422,10 @@ static void correct_carpets_generic(uint16_t cols, uint16_t rows,
   }
 }
 
+/**
+ * Detect carpet regions using edge detection (Sobel operator) in lower 2/3 of image.
+ * High edge magnitude (> CARPET_EDGE_THRESHOLD) indicates carpet boundary.
+ */
 static void find_carpet(struct image_t *img, uint16_t cols, uint16_t rows)
 {
   memset(carpet_small, 0, sizeof(carpet_small));
@@ -436,6 +484,7 @@ static void find_carpet(struct image_t *img, uint16_t cols, uint16_t rows)
           uint8_t Y_down;
           get_yuv422_pixel_fast(buf, img_w, sx, sy, &Y_down, &Ud, &Vd);
 
+          /* Compute Sobel gradients in X and Y directions */
           const int16_t Gx = (int16_t)Y_right - (int16_t)Y_left;
           const int16_t Gy = (int16_t)Y_down  - (int16_t)Y_up;
           total_edge_magnitude += (uint32_t)(abs(Gx) + abs(Gy));
@@ -453,6 +502,14 @@ static void find_carpet(struct image_t *img, uint16_t cols, uint16_t rows)
 /* Main analysis                                                              */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Main ground segmentation analysis pipeline:
+ * 1. Detect carpets via edge detection
+ * 2. Correct carpet detection via morphological operations
+ * 3. Build ground/tree classification maps
+ * 4. Merge and process maps
+ * 5. Compute horizon, scores, and obstacle detection
+ */
 static uint32_t ground_seg_analyse_image(struct image_t *img,
                                          struct ground_seg_result_t *res)
 {
@@ -502,6 +559,9 @@ static uint32_t ground_seg_analyse_image(struct image_t *img,
 /* Paparazzi hooks                                                            */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Image processing callback: analyze image and store result in thread-safe buffer.
+ */
 static struct image_t *ground_seg_process_image(struct image_t *img, uint8_t camera_id)
 {
   (void)camera_id;
@@ -517,6 +577,9 @@ static struct image_t *ground_seg_process_image(struct image_t *img, uint8_t cam
   return img;
 }
 
+/**
+ * Initialize ground segmentation module: setup mutex and register with vision pipeline.
+ */
 void ground_segmentation_init(void)
 {
   memset(&ground_seg_shared, 0, sizeof(ground_seg_shared));
@@ -535,6 +598,10 @@ void ground_segmentation_init(void)
 #endif
 }
 
+/**
+ * Periodic hook: check for new results and trigger callbacks/ABI messages as needed.
+ * Note: Implementation placeholder - ABI message sending would be called here when updated.
+ */
 void ground_segmentation_periodic(void)
 {
   struct ground_seg_result_t local_result;
@@ -547,8 +614,12 @@ void ground_segmentation_periodic(void)
   pthread_mutex_unlock(&ground_seg_mutex);
 
   if (!updated) { return; }
+  /* TODO: Send ABI messages or trigger callbacks with ground segmentation results */
 }
 
+/**
+ * Thread-safe getter for latest ground segmentation result.
+ */
 void ground_seg_get_result(struct ground_seg_result_t *out)
 {
   pthread_mutex_lock(&ground_seg_mutex);
