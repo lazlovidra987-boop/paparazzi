@@ -1,0 +1,11 @@
+Note: this folder was not used directly in the final pipeline, but rather served as a collection of scripts that were executed locally.
+
+The purpose of these scripts is to prepare the dataset used for training the CNN model. This includes:
+- labeling the data,
+- combining multiple data sources,
+- mirroring images (and corresponding labels),
+- and applying data augmentation.
+
+These files are included to document the data processing workflow.
+
+Some images required resizing and rotation, as they originated from different sources. The script `resize_images.py` ensures that all images match the resolution and orientation of the drone’s onboard camera.
