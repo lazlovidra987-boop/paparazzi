@@ -1,8 +1,12 @@
+import matplotlib
+matplotlib.use('TkAgg')
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
+from sklearn.metrics import confusion_matrix, classification_report
 from model import GateNet
 from dataset import GateDataset
 
@@ -15,13 +19,13 @@ LEARNING_RATE = 0.001
 WEIGHT_DECAY = 1e-4
 DROPOUT_RATE = 0.2
 WARMUP_EPOCHS = 5
+CLASSES = ["None", "Left", "Straight", "Right"]
 
 def calculate_class_weights(dataset):
     """Calculate weights inversely proportional to class frequency"""
-    # Extract labels from the subset/dataset
     labels = [dataset[i][1].item() for i in range(len(dataset))]
     class_counts = np.bincount(labels, minlength=4)
-    class_counts = np.maximum(class_counts, 1) # Avoid division by zero
+    class_counts = np.maximum(class_counts, 1) 
     weights = 1.0 / class_counts
     weights = weights / weights.sum() * 4
     return torch.tensor(weights, dtype=torch.float32)
@@ -49,17 +53,11 @@ def main():
 
     # 2. Initialize Model & Optimization
     model = GateNet(dropout_rate=DROPOUT_RATE).to(device)
-    
-    # Optimizer initialized ONCE
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     
-    # Class weights for imbalanced data
     class_weights = calculate_class_weights(train_ds).to(device)
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 
-    # Learning Rate Schedulers
-    # 1. Linear warmup for the first few epochs
-    # 2. Cosine annealing for the rest
     def lr_lambda(epoch):
         if epoch < WARMUP_EPOCHS:
             return float(epoch + 1) / float(WARMUP_EPOCHS)
@@ -80,7 +78,6 @@ def main():
         for imgs, labels in train_loader:
             imgs, labels = imgs.to(device), labels.to(device)
             
-            # --- Gradient Step ---
             optimizer.zero_grad()
             outputs = model(imgs)
             loss = criterion(outputs, labels)
@@ -89,7 +86,6 @@ def main():
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             
-            # --- Metrics ---
             total_loss += loss.item()
             train_correct += (outputs.argmax(dim=1) == labels).sum().item()
             train_total += labels.size(0)
@@ -99,85 +95,111 @@ def main():
         
         # Validation
         model.eval()
-        val_correct, val_total, val_loss = 0, 0, 0
+        val_correct, val_total = 0, 0
         with torch.no_grad():
             for imgs, labels in val_loader:
                 imgs, labels = imgs.to(device), labels.to(device)
                 outputs = model(imgs)
-                val_loss += criterion(outputs, labels).item()
                 val_correct += (outputs.argmax(dim=1) == labels).sum().item()
                 val_total += labels.size(0)
         
         val_accuracy = 100 * val_correct / val_total
-        avg_val_loss = val_loss / len(val_loader)
-        
         train_losses.append(avg_train_loss)
         val_accs.append(val_accuracy)
 
-        # Update LR Scheduler
         scheduler.step()
 
-        # Save Best
         if val_accuracy > best_val_acc:
             best_val_acc = val_accuracy
             torch.save(model.state_dict(), "gate_model_best.pth")
         
-        gap = train_acc - val_accuracy
         print(f"Ep [{epoch+1:2d}] Loss: {avg_train_loss:.3f} | Acc: {train_acc:5.1f}% | "
               f"Val Acc: {val_accuracy:5.1f}% | LR: {optimizer.param_groups[0]['lr']:.6f}")
         
-        if epoch > 25 and gap > 25:
+        if epoch > 25 and (train_acc - val_accuracy) > 25:
             print("Stopping early: Overfitting detected.")
             break
 
-    # 4. Final Evaluation
-    print("\n" + "="*50 + "\nFINAL TEST RESULTS")
+    # 4. Final Evaluation (Load Best Weights)
+    print("\n" + "="*50 + "\nFINAL TEST ANALYSIS")
+    model.load_state_dict(torch.load("gate_model_best.pth"))
     evaluate_model(model, test_loader, device)
     
     # 5. Visualization
     visualize_training(train_losses, val_accs)
-    visualize_results(model, val_ds, device)
+    visualize_results(model, test_ds, device)
 
-# --- Helper Functions (From your original script) ---
+# --- Helper Functions ---
 
 def evaluate_model(model, dataloader, device):
-    classes = ["None", "Left", "Straight", "Right"]
     model.eval()
     all_preds, all_labels = [], []
     
     with torch.no_grad():
         for imgs, labels in dataloader:
-            imgs, labels = imgs.to(device), labels.to(device)
-            preds = model(imgs).argmax(dim=1)
+            imgs = imgs.to(device)
+            outputs = model(imgs)
+            preds = outputs.argmax(dim=1)
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
     
-    accuracy = np.mean(np.array(all_preds) == np.array(all_labels)) * 100
-    print(f"Overall Test Accuracy: {accuracy:.2f}%")
+    # Print Metrics
+    print("\nClassification Report:")
+    print(classification_report(all_labels, all_preds, target_names=CLASSES))
+    
+    # Plot Confusion Matrix
+    cm = confusion_matrix(all_labels, all_preds)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=CLASSES, yticklabels=CLASSES)
+    plt.title('Confusion Matrix')
+    plt.ylabel('True Label')
+    plt.xlabel('Predicted Label')
+    plt.show()
+
+    # Normalized Confusion Matrix (Percentages)
+    cm_norm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm_norm, annot=True, fmt='.2f', cmap='Greens', xticklabels=CLASSES, yticklabels=CLASSES)
+    plt.title('Normalized Confusion Matrix (Recall per Class)')
+    plt.ylabel('True Label')
+    plt.xlabel('Predicted Label')
+    plt.show()
 
 def visualize_training(train_losses, val_accs):
-    plt.figure(figsize=(10, 4))
+    plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
-    plt.plot(train_losses, label='Loss')
-    plt.title('Train Loss')
+    plt.plot(train_losses, label='Train Loss', color='royalblue')
+    plt.title('Training Loss Evolution')
+    plt.xlabel('Epoch')
+    plt.legend()
+    
     plt.subplot(1, 2, 2)
-    plt.plot(val_accs, color='orange', label='Val Acc')
-    plt.title('Validation Accuracy')
+    plt.plot(val_accs, label='Val Accuracy', color='darkorange')
+    plt.title('Validation Accuracy Evolution')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy %')
+    plt.legend()
+    plt.tight_layout()
     plt.show()
 
 def visualize_results(model, dataset, device, n=5):
-    classes = ["None", "Left", "Straight", "Right"]
     model.eval()
     indices = np.random.choice(len(dataset), n)
-    plt.figure(figsize=(15, 3))
+    plt.figure(figsize=(15, 4))
     for i, idx in enumerate(indices):
         img, label = dataset[idx]
         out = model(img.unsqueeze(0).to(device))
         pred = out.argmax().item()
+        
         plt.subplot(1, n, i+1)
-        plt.imshow(img.permute(1,2,0).cpu() if img.shape[0]==3 else img.squeeze().cpu(), cmap='gray')
-        plt.title(f"T: {classes[label]}\nP: {classes[pred]}")
+        # Handle grayscale vs RGB
+        disp_img = img.permute(1,2,0).cpu() if img.shape[0]==3 else img.squeeze().cpu()
+        plt.imshow(disp_img, cmap='gray' if img.shape[0]==1 else None)
+        
+        color = 'green' if pred == label else 'red'
+        plt.title(f"True: {CLASSES[label]}\nPred: {CLASSES[pred]}", color=color)
         plt.axis('off')
+    plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import numpy as np
 from bebop_gate_net import GateDetector
 
 # ============================================================================
-# CONFIGURATION -- this file is not in use anymore
+# CONFIGURATION -- this file is not in use anymore go to inference.py for the new viewer
 # ============================================================================
 TEST_DIR = './cyberzoo_test'         
 MODEL_PATH = 'best_gate_model.keras' 
