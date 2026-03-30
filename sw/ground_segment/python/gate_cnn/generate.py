@@ -15,7 +15,7 @@ TEMPLATE_PATH = "gate_template.png"
 YAW_DISTORT_MAX = 0.20  
 
 # ============================================================================
-# NEW: AUGMENTATION FILTERS
+# AUGMENTATION FILTERS
 # ============================================================================
 
 def distort_template(image):

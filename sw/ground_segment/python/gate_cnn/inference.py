@@ -3,17 +3,16 @@ import torch
 import numpy as np
 import os
 import glob
-from model import GateNet # Imports your model from model.py
+from model import GateNet
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-MODEL_WEIGHTS = "gate_model_best.pth"  # Path to your trained weights
-IMAGE_FOLDER = "./cyberzoo_test"       # Folder containing images to test
+MODEL_WEIGHTS = "gate_model_best.pth" 
+IMAGE_FOLDER = "./cyberzoo_test"      
 CLASSES = ["None", "Left", "Straight", "Right"]
-DISPLAY_SCALE = 2.0                    # Multiplier to make the displayed image bigger
+DISPLAY_SCALE = 2.0              
 
-# Global flag for the mouse click event
 advance_frame = False
 
 def mouse_click(event, x, y, flags, param):
@@ -25,14 +24,14 @@ def mouse_click(event, x, y, flags, param):
 def main():
     global advance_frame
     
-    # 1. Setup Device & Load Model
+    # Setup & Load Model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Loading model on {device}...")
     
     model = GateNet().to(device)
     try:
         model.load_state_dict(torch.load(MODEL_WEIGHTS, map_location=device))
-        model.eval() # Set to evaluation mode (turns off dropout)
+        model.eval()
         print("Model loaded successfully!")
     except Exception as e:
         print(f"Error loading model weights: {e}")
@@ -44,8 +43,6 @@ def main():
         print(f"No images found in {IMAGE_FOLDER}!")
         return
         
-    print(f"Found {len(image_paths)} images. Click the window or press any key to advance. Press 'ESC' to quit.")
-
     # 3. Setup OpenCV Window and Mouse Callback
     window_name = "Drone Gate Inference Test"
     cv2.namedWindow(window_name)
@@ -84,7 +81,7 @@ def main():
             
         prediction_text = CLASSES[pred_idx]
         
-        # --- VISUALIZATION (Rotate, Resize, and Draw ONLY for display) ---
+        #VISUALIZATION Rotate, Resize, and Draw
         display_img = img_bgr.copy()
         
         # 1. Rotate 90 degrees counter-clockwise
@@ -104,10 +101,10 @@ def main():
         cv2.putText(display_img, f"Conf: {confidence*100:.1f}%", (20, 70), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
 
-        # 4. Draw two vertical lines at +/- 10% from the center
+        # Draw two vertical lines at +/- 10% from the center
         height, width = display_img.shape[:2]
         center_x = width // 2
-        offset = int(width * 0.10) # 10% of total width
+        offset = int(width * 0.10)
         
         left_line_x = center_x - offset
         right_line_x = center_x + offset
@@ -115,7 +112,6 @@ def main():
         cv2.line(display_img, (left_line_x, 0), (left_line_x, height), (255, 0, 0), 2)
         cv2.line(display_img, (right_line_x, 0), (right_line_x, height), (255, 0, 0), 2)
 
-        # Show the image
         cv2.imshow(window_name, display_img)
         
         # --- WAIT FOR CLICK OR KEYPRESS ---

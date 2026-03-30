@@ -3,16 +3,17 @@ import json
 import shutil
 
 # ============================================================================
-# MERGE CONFIGURATION
+# MERGE CONFIGURATION - with this file we can merge the different 
+# datasets together into one master dataset for training
 # ============================================================================
-REAL_IMG_DIR = "img"                     # Where your real images are
-REAL_LABELS = "labels.json"              # Your real labels file
+REAL_IMG_DIR = "img"                 
+REAL_LABELS = "labels.json"             
 
-SYNTH_IMG_DIR = "synthetic_data/img"     # Where your synthetic images are
-SYNTH_LABELS = "synthetic_data/labels.json"# Your synthetic labels file
+SYNTH_IMG_DIR = "synthetic_data/img"     
+SYNTH_LABELS = "synthetic_data/labels.json"
 
-OUT_IMG_DIR = "DATA/img"     # The new master image folder
-OUT_LABELS = "DATA/labels.json"# The new master labels file
+OUT_IMG_DIR = "DATA/img"    
+OUT_LABELS = "DATA/labels.json"
 
 def merge_data():
     print("\n" + "="*60)
@@ -38,7 +39,6 @@ def merge_data():
                 # Copy image
                 shutil.copy2(src_path, dst_path)
                 
-                # Keep the original heading exactly as it is!
                 combined_labels.append({
                     "img_name": img_name,
                     "heading_angle": item.get('heading_angle', 0.0),

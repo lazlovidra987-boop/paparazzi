@@ -5,7 +5,7 @@ import numpy as np
 from bebop_gate_net import GateDetector
 
 # ============================================================================
-# CONFIGURATION
+# CONFIGURATION -- this file is not in use anymore
 # ============================================================================
 TEST_DIR = './cyberzoo_test'         
 MODEL_PATH = 'best_gate_model.keras' 
@@ -48,32 +48,20 @@ def main():
         if img is None: continue
             
         h, w = img.shape[:2]
-        
-        # 1. Get prediction
-        # direction_name: "LEFT", "STRAIGHT", or "RIGHT"
-        # prob: the highest probability value
-        # confidence: gate presence (0-1)
-        # masked_img: what the network sees
+
         direction_name, prob, confidence, masked_img = detector.detect(img_path)
 
-        # 2. Get the full probability array for "all 3 vectors"
-        # We'll need to reach into the detector to get the raw dir_probs
-        # If your GateDetector returns it as 'prob', we use that, otherwise we re-access it:
-        # For this example, I'll assume detector.detect returns (name, full_probs, conf, mask)
-        
+       
         # --- 1. DISPLAY NETWORK INPUT ---
         if masked_img is not None:
             network_view = (masked_img * 255).astype(np.uint8)
             cv2.imshow('What the Network Sees', network_view)
         
-        # --- 2. DISPLAY ALL 3 VECTORS ---
-        # Draw a larger black background bar
+
         cv2.rectangle(img, (0, 0), (w, 110), (0, 0, 0), -1)
         
         color = (0, 255, 0) if confidence > 0.5 else (0, 0, 255)
-        
-        # We fetch the raw probabilities from the detector. 
-        # Note: Ensure your bebop_gate_net.py's detect() returns the whole array as the 2nd value.
+    
         probs = prob if isinstance(prob, (list, np.ndarray)) else [0, 0, 0]
         
         labels = ["LEFT", "STRAIGHT", "RIGHT"]
