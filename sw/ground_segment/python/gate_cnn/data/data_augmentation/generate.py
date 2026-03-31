@@ -156,10 +156,10 @@ def overlay_transparent(bg, ov, x, y):
 # ============================================================================
 
 def generate_dataset():
-    print(f"START GENERATIE: {NUM_IMAGES} beelden met Blue Noise & Warp")
+    print(f"START Generation: {NUM_IMAGES} images with Blue Noise & Warp")
     gate_template = cv2.imread(TEMPLATE_PATH, cv2.IMREAD_UNCHANGED)
     if gate_template is None:
-        print("FOUT: Template niet gevonden!"); return
+        print("ERROR: Template not found!"); return
         
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     labels, headings_list = [], []
@@ -208,7 +208,7 @@ def generate_dataset():
     with open("synthetic_data/labels.json", "w") as f:
         json.dump(labels, f, indent=4)
     
-    print(f"\n✓ Klaar! Bruikbare gates: {len(headings_list)}")
+    print(f"\n✓ Done! Usable gates: {len(headings_list)}")
 
 if __name__ == "__main__":
     generate_dataset()
