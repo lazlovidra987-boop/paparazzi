@@ -1,3 +1,50 @@
+#=========================================================
+#GATE SYNTHETIC DATA GENERATOR - DOCUMENTATION
+#=========================================================
+#
+#1. OVERVIEW
+#This script generates a synthetic dataset of "gate" images
+#used for training computer vision models to detect gates
+#and estimate vertical heading angles.
+#
+#2. REQUIREMENTS
+#- Python 3.x
+#- OpenCV (cv2)
+#- NumPy
+#
+#Install dependencies via:
+#pip install opencv-python numpy
+#
+#3. SETUP
+#- Place 'gate_template.png' in the same folder as the script.
+#- The template should have a transparent background (alpha channel).
+#
+#4. HOW IT WORKS
+#The script follows a multi-stage augmentation pipeline:
+#- Local Warp: Simulates lens or physical distortion.
+#- Perspective: Applies sideways tapering (Yaw) to the gate.
+#- Random Overlay: Places the gate on a random-gray background.
+#- Interference: Adds blue "dead pixel" noise and Gaussian noise.
+#- Motion Blur: Simulates camera movement.
+#
+#5. OUTPUTS
+#All files are saved to the 'synthetic_data/' directory:
+#- /img: Contains .jpg files (sf_0000.jpg, etc.)
+#- labels.json: Contains metadata for each image.
+#
+#6. LABEL DATA FORMAT
+#- img_name: Filename.
+#- heading_angle: Normalized Y-coordinate (-1.0 to 1.0).
+#- confidence: 1.0 (gate present) or 0.0 (no gate).
+#
+#7. CONFIGURATION
+#You can adjust the constants at the top of the script:
+#- NUM_IMAGES: Total files to generate.
+#- IMG_H / IMG_W: Output resolution.
+#- YAW_DISTORT_MAX: Intensity of perspective warping.
+#
+#=========================================================
+
 import cv2
 import numpy as np
 import os
