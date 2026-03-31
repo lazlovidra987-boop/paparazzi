@@ -163,14 +163,64 @@ static inline void get_yuv422_pixel(struct image_t *img, uint16_t x, uint16_t y,
   *U = u;
   *V = v;
   *Y = ((src_x & 1U) == 0U) ? y0 : y1;
+  
 }
+
+/*  This tree only works for the actual zyberzoo, not the gazebo simulation for that use the simple yuv thresholds that work with both  */
 
 static inline bool is_ground_yuv(uint8_t Y, uint8_t U, uint8_t V)
 {
   if (ground_use_tree) {
-    return (U <= 103U) && (V <= 155U) && (Y > 82U);
+    if (U <= 102U) {
+      if (V <= 156U) {
+        if (Y <= 84U) {
+          return false;
+        } else {
+          if (V <= 133U) {
+            return false;
+          } else {
+            if (U <= 73U) {
+              return false;
+            } else {
+              return true;
+            }
+          }
+        }
+      } else {
+        if (V <= 160U) {
+          if (U <= 86U) {
+            if (Y <= 182U) {
+              return true;
+            } else {
+              return false;
+            }
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }
+    } else {
+      if (U <= 106U) {
+        if (V <= 144U) {
+          if (Y <= 87U) {
+            return false;
+          } else {
+            if (Y <= 184U) {
+              return true;
+            } else {
+              return false;
+            }
+          }
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
   }
-
   return (Y >= ground_lum_min && Y <= ground_lum_max &&
           U >= ground_cb_min  && U <= ground_cb_max  &&
           V >= ground_cr_min  && V <= ground_cr_max);
